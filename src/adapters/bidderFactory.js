@@ -14,6 +14,7 @@ import { ADPOD } from '../mediaTypes.js';
 import { getHook, hook } from '../hook.js';
 import { getCoreStorageManager } from '../storageManager.js';
 import {auctionManager} from '../auctionManager.js';
+import { bidderSettings } from '../bidderSettings.js';
 
 export const storage = getCoreStorageManager('bidderFactory');
 
@@ -278,8 +279,12 @@ export function newBidder(spec) {
  * @param onBid {function({})} invoked once for each bid in the response - with the bid as returned by interpretResponse
  * @param onCompletion {function()} invoked once when all bid requests have been processed
  */
+
+ //pubmatic - groupm
+ //pubmaticBidApadter
 export const processBidderRequests = hook('sync', function (spec, bids, bidderRequest, ajax, wrapCallback, {onRequest, onResponse, onError, onBid, onCompletion}) {
-  let requests = spec.buildRequests(bids, bidderRequest);
+  let tempVar = bidderSettings.get(bidderRequest.bidderCode, 'allowUnknownBidderCodes');
+  let requests = spec.buildRequests(bids, bidderRequest, tempVar);
   if (!requests || requests.length === 0) {
     onCompletion();
     return;
