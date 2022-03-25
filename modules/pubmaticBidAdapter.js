@@ -3,7 +3,6 @@ import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO, NATIVE } from '../src/mediaTypes.js';
 import {config} from '../src/config.js';
 import { Renderer } from '../src/Renderer.js';
-import { bidderSettings } from '../src/bidderSettings.js';
 
 const BIDDER_CODE = 'pubmatic';
 const LOG_WARN_PREFIX = 'PubMatic: ';
@@ -1081,8 +1080,6 @@ export const spec = {
     validBidRequests.forEach(originalBid => {
       bid = deepClone(originalBid);
       bid.params.adSlot = bid.params.adSlot || '';
-      var unknownBidderFlag = (bidderSettings.get(bidderRequest.bidderCode, 'allowUnknownBidderCodes'));
-      bid.testVar = unknownBidderFlag;
       _parseAdSlot(bid);
       if ((bid.mediaTypes && bid.mediaTypes.hasOwnProperty('video')) || bid.params.hasOwnProperty('video')) {
         // Nothing to do

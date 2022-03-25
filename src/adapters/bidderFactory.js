@@ -296,7 +296,6 @@ export function newBidder(spec) {
  * @param onBid {function({})} invoked once for each bid in the response - with the bid as returned by interpretResponse
  * @param onCompletion {function()} invoked once when all bid requests have been processed
  */
-
 export const processBidderRequests = hook('sync', function (spec, bids, bidderRequest, ajax, wrapCallback, {onRequest, onResponse, onError, onBid, onCompletion}) {
   let requests = spec.buildRequests(bids, bidderRequest);
   if (!requests || requests.length === 0) {

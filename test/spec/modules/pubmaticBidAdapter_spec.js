@@ -3919,14 +3919,6 @@ describe('PubMatic adapter', function () {
       sandbox.restore();
     })
 
-    it('Should log info when bidder is groupm  and return', function () {
-      let request = spec.buildRequests(newBidRequests, {bidderCode: 'groupm',
-        auctionId: 'new-auction-id'
-      });
-      sinon.assert.calledOnce(utils.logInfo);
-      expect(request).to.equal(undefined);
-    });
-
     it('Should add bidder code & bidder as groupm for marketplace groupm response', function () {
       let request = spec.buildRequests(newBidRequests, {
         auctionId: 'new-auction-id'
