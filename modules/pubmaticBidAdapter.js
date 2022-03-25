@@ -13,6 +13,7 @@ const USER_SYNC_URL_IMAGE = 'https://image8.pubmatic.com/AdServer/ImgSync?p=';
 const DEFAULT_CURRENCY = 'USD';
 const AUCTION_TYPE = 1;
 const GROUPM_ALIAS = {code: 'groupm', gvlid: 98};
+const MARKETPLACE_PARTNERS = ['groupm']
 const UNDEFINED = undefined;
 const DEFAULT_WIDTH = 0;
 const DEFAULT_HEIGHT = 0;
@@ -1066,8 +1067,6 @@ export const spec = {
    * @return ServerRequest Info describing the request to the server.
    */
   buildRequests: (validBidRequests, bidderRequest) => {
-    // eslint-disable-next-line no-console
-    // console.log(unknownBidderFlag)
     var refererInfo;
     if (bidderRequest && bidderRequest.refererInfo) {
       refererInfo = bidderRequest.refererInfo;
@@ -1290,6 +1289,13 @@ export const spec = {
                 newBid.adserverTargeting = {
                   'hb_buyid_pubmatic': seatbidder.ext.buyid
                 };
+              }
+
+              // if from the server-response the bid.ext.marketplace is set then
+              //    submit the bid to Prebid as marketplace name
+              if (bid.ext && !!bid.ext.marketplace && MARKETPLACE_PARTNERS.includes(bid.ext.marketplace)) {
+                newBid.bidderCode = bid.ext.marketplace;
+                newBid.bidder = bid.ext.marketplace;
               }
 
               bidResponses.push(newBid);
