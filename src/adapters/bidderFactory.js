@@ -236,6 +236,12 @@ export function newBidder(spec) {
         onBid: (bid) => {
           const bidRequest = bidRequestMap[bid.requestId];
           if (bidRequest) {
+            if (isUnknownBidder(bid.bidderCode, bidRequest.bidder)) {
+              logWarn(bid.bidderCode + ' is not a registered partner or known bidder. Continuing without bids.');
+              return;
+            } else {
+              bid.adapterCode = bidRequest.bidder;
+            }
             // creating a copy of original values as cpm and currency are modified later
             bid.originalCpm = bid.cpm;
             bid.originalCurrency = bid.currency;
@@ -250,6 +256,17 @@ export function newBidder(spec) {
       });
     }
   });
+
+  function isUnknownBidder(unknownBidder, bidderCode) {
+    let currentBidderSettings = !!bidderSettings.get(bidderCode, 'allowUnknownBidderCodes');
+    let unknownBiddersList = bidderSettings.get(bidderCode, 'allowedUnknownBidderCodes');
+    if (!!unknownBidder && bidderCode !== unknownBidder) {
+      if (!currentBidderSettings || (currentBidderSettings && isArray(unknownBiddersList) && (unknownBiddersList[0] !== '*' && !unknownBiddersList.includes(unknownBidder)))) {
+        return true;
+      }
+    }
+    return false;
+  }
 
   function registerSyncs(responses, gdprConsent, uspConsent) {
     registerSyncInner(spec, responses, gdprConsent, uspConsent);
@@ -280,8 +297,6 @@ export function newBidder(spec) {
  * @param onCompletion {function()} invoked once when all bid requests have been processed
  */
 
- //pubmatic - groupm
- //pubmaticBidApadter
 export const processBidderRequests = hook('sync', function (spec, bids, bidderRequest, ajax, wrapCallback, {onRequest, onResponse, onError, onBid, onCompletion}) {
   let tempVar = bidderSettings.get(bidderRequest.bidderCode, 'allowUnknownBidderCodes');
   let requests = spec.buildRequests(bids, bidderRequest, tempVar);
