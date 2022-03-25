@@ -298,8 +298,7 @@ export function newBidder(spec) {
  */
 
 export const processBidderRequests = hook('sync', function (spec, bids, bidderRequest, ajax, wrapCallback, {onRequest, onResponse, onError, onBid, onCompletion}) {
-  let tempVar = bidderSettings.get(bidderRequest.bidderCode, 'allowUnknownBidderCodes');
-  let requests = spec.buildRequests(bids, bidderRequest, tempVar);
+  let requests = spec.buildRequests(bids, bidderRequest);
   if (!requests || requests.length === 0) {
     onCompletion();
     return;
