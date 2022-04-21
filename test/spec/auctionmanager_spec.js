@@ -510,6 +510,27 @@ describe('auctionmanager.js', function () {
       assert.equal(bid.cpm, 0.25);
     });
 
+    it('adapterCode bidCpmAdjustment changes the bid of bidder', function () {
+      const bid = Object.assign({},
+        createBid(2),
+        fixtures.getBidResponses()[5], { adapterCode: 'brealtime2' }
+      );
+
+      assert.equal(bid.cpm, 0.5);
+
+      $$PREBID_GLOBAL$$.bidderSettings =
+      {
+        'brealtime2': {
+          bidCpmAdjustment: function (bidCpm) {
+            return bidCpm * 0.5;
+          }
+        }
+      };
+
+      adjustBids(bid)
+      expect(bid.cpm).to.equal(0.25);
+    });
+
     it('Custom bidCpmAdjustment AND custom configuration for one bidder and inherit standard settings', function () {
       $$PREBID_GLOBAL$$.bidderSettings =
       {
@@ -606,6 +627,44 @@ describe('auctionmanager.js', function () {
       assert.equal(bid.sendStandardTargeting, false);
     });
 
+    it('sendStandardTargeting=false from adapter instead of bidder', function () {
+      const bid1 = Object.assign({},
+        bid, { adapterCode: 'appnexus2' }
+      );
+
+      $$PREBID_GLOBAL$$.bidderSettings =
+      {
+        appnexus2: {
+          sendStandardTargeting: false,
+          adserverTargeting: [
+            {
+              key: CONSTANTS.TARGETING_KEYS.BIDDER,
+              val: function (bidResponse) {
+                return bidResponse.bidderCode;
+              }
+            }, {
+              key: CONSTANTS.TARGETING_KEYS.AD_ID,
+              val: function (bidResponse) {
+                return bidResponse.adId;
+              }
+            }, {
+              key: CONSTANTS.TARGETING_KEYS.PRICE_BUCKET,
+              val: function (bidResponse) {
+                return bidResponse.pbHg;
+              }
+            }
+          ]
+        }
+      };
+
+      var expected = getDefaultExpected(bid1);
+      expected[CONSTANTS.TARGETING_KEYS.PRICE_BUCKET] = 5.57;
+
+      var response = getKeyValueTargetingPairs(bid1.bidderCode, bid1);
+      expect(response).to.deep.equal(expected);
+      expect(bid.sendStandardTargeting).to.equal(false);
+    });
+
     it('suppressEmptyKeys=true', function() {
       $$PREBID_GLOBAL$$.bidderSettings =
       {
@@ -630,6 +689,32 @@ describe('auctionmanager.js', function () {
 
       var response = getKeyValueTargetingPairs(bid.bidderCode, bid);
       assert.deepEqual(response, expected);
+    });
+
+    it('suppressEmptyKeys=true for adapterCode', function() {
+      const bid1 = Object.assign({},
+        bid, { adapterCode: 'appnexus2' }
+      );
+
+      $$PREBID_GLOBAL$$.bidderSettings =
+      {
+        appnexus2: {
+          suppressEmptyKeys: true,
+          adserverTargeting: [
+            {
+              key: 'aKeyWithAValue',
+              val: 42
+            },
+            {
+              key: 'aKeyWithAnEmptyValue',
+              val: ''
+            }
+          ]
+        }
+      };
+
+      var response = getKeyValueTargetingPairs(bid1.bidderCode, bid1);
+      expect(response).to.not.contain.key('aKeyWithAnEmptyValue');
     });
   });
 

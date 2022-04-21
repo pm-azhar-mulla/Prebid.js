@@ -9,6 +9,7 @@ import {deepClone} from 'src/utils.js';
 
 const bid1 = {
   'bidderCode': 'rubicon',
+  'adapterCode': 'rubicon12',
   'width': '300',
   'height': '250',
   'statusMessage': 'Bid available',
@@ -502,6 +503,21 @@ describe('targeting tests', function () {
       it('targeting should allow a 0 cpm with targetingControls.allowZeroCpmBids set to true', function () {
         $$PREBID_GLOBAL$$.bidderSettings = {
           standard: {
+            allowZeroCpmBids: true
+          }
+        };
+
+        const targeting = targetingInstance.getAllTargeting(['/123456/header-bid-tag-0']);
+        expect(targeting['/123456/header-bid-tag-0']).to.include.all.keys('hb_pb', 'hb_bidder', 'hb_adid', 'hb_bidder_appnexus', 'hb_adid_appnexus', 'hb_pb_appnexus');
+        expect(targeting['/123456/header-bid-tag-0']['hb_pb']).to.equal('0.0')
+      });
+
+      it('targeting should allow a 0 cpm with targetingControls.allowZeroCpmBids set to true for adapterCode', function () {
+        $$PREBID_GLOBAL$$.bidderSettings = {
+          standard: {
+            allowZeroCpmBids: false
+          },
+          'rubicon12': {
             allowZeroCpmBids: true
           }
         };

@@ -467,7 +467,7 @@ export function newTargeting(auctionManager) {
     const adUnitCodes = getAdUnitCodes(adUnitCode);
     return bidsReceived
       .filter(bid => includes(adUnitCodes, bid.adUnitCode))
-      .filter(bid => (bidderSettings.get(bid.bidderCode, 'allowZeroCpmBids') === true) ? bid.cpm >= 0 : bid.cpm > 0)
+      .filter(bid => (bidderSettings.get(bid.bidderCode, 'allowZeroCpmBids', bid.adapterCode) === true) ? bid.cpm >= 0 : bid.cpm > 0)
       .map(bid => bid.adUnitCode)
       .filter(uniques)
       .map(adUnitCode => bidsReceived

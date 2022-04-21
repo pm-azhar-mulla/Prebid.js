@@ -596,7 +596,7 @@ function getPreparedBidForAuction({adUnitCode, bid, auctionId}, {index = auction
 
 function setupBidTargeting(bidObject) {
   let keyValues;
-  const cpmCheck = (bidderSettings.get(bidObject.bidderCode, 'allowZeroCpmBids') === true) ? bidObject.cpm >= 0 : bidObject.cpm > 0;
+  const cpmCheck = (bidderSettings.get(bidObject.bidderCode, 'allowZeroCpmBids', bidObject.adapterCode) === true) ? bidObject.cpm >= 0 : bidObject.cpm > 0;
   if (bidObject.bidderCode && (cpmCheck || bidObject.dealId)) {
     keyValues = getKeyValueTargetingPairs(bidObject.bidderCode, bidObject);
   }
@@ -704,7 +704,7 @@ function defaultAdserverTargeting() {
  * @param {BidRequest} bidReq
  * @returns {*}
  */
-export function getStandardBidderSettings(mediaType, bidderCode) {
+export function getStandardBidderSettings(mediaType, bidderCode, bidReq) {
   const TARGETING_KEYS = CONSTANTS.TARGETING_KEYS;
   const standardSettings = Object.assign({}, bidderSettings.settingsFor(null));
 
@@ -724,7 +724,7 @@ export function getStandardBidderSettings(mediaType, bidderCode) {
     });
 
     // Adding hb_cache_host
-    if (config.getConfig('cache.url') && (!bidderCode || bidderSettings.get(bidderCode, 'sendStandardTargeting') !== false)) {
+    if (config.getConfig('cache.url') && (!bidderCode || bidderSettings.get(bidderCode, 'sendStandardTargeting', bidReq.adapterCode) !== false)) {
       const urlInfo = parseUrl(config.getConfig('cache.url'));
 
       if (typeof find(adserverTargeting, targetingKeyVal => targetingKeyVal.key === TARGETING_KEYS.CACHE_HOST) === 'undefined') {
@@ -743,14 +743,21 @@ export function getKeyValueTargetingPairs(bidderCode, custBidObj, {index = aucti
     return {};
   }
   const bidRequest = index.getBidRequest(custBidObj);
+  let adapterCode = custBidObj.adapterCode;
   var keyValues = {};
 
   // 1) set the keys from "standard" setting or from prebid defaults
   // initialize default if not set
-  const standardSettings = getStandardBidderSettings(custBidObj.mediaType, bidderCode);
+  const standardSettings = getStandardBidderSettings(custBidObj.mediaType, bidderCode, custBidObj);
   setKeys(keyValues, standardSettings, custBidObj, bidRequest);
 
-  // 2) set keys from specific bidder setting override if they exist
+  // 2) set keys from specific bidder's adapter setting override if they exist
+  if (adapterCode && bidderSettings.getOwn(adapterCode, CONSTANTS.JSON_MAPPING.ADSERVER_TARGETING)) {
+    setKeys(keyValues, bidderSettings.ownSettingsFor(adapterCode), custBidObj, bidRequest);
+    custBidObj.sendStandardTargeting = bidderSettings.get(adapterCode, 'sendStandardTargeting');
+  }
+
+  // 3) set keys from specific bidder setting override if they exist
   if (bidderCode && bidderSettings.getOwn(bidderCode, CONSTANTS.JSON_MAPPING.ADSERVER_TARGETING)) {
     setKeys(keyValues, bidderSettings.ownSettingsFor(bidderCode), custBidObj, bidRequest);
     custBidObj.sendStandardTargeting = bidderSettings.get(bidderCode, 'sendStandardTargeting');
@@ -805,7 +812,8 @@ function setKeys(keyValues, bidderSettings, custBidObj, bidReq) {
 export function adjustBids(bid) {
   let code = bid.bidderCode;
   let bidPriceAdjusted = bid.cpm;
-  const bidCpmAdjustment = bidderSettings.get(code || null, 'bidCpmAdjustment');
+  let adapterCode = bid.adapterCode;
+  const bidCpmAdjustment = bidderSettings.get(code || null, 'bidCpmAdjustment', adapterCode || null);
 
   if (bidCpmAdjustment && typeof bidCpmAdjustment === 'function') {
     try {
