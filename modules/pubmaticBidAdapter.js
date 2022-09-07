@@ -803,6 +803,7 @@ function _handleEids(payload, validBidRequests) {
   let bidUserIdAsEids = deepAccess(validBidRequests, '0.userIdAsEids');
   if (isArray(bidUserIdAsEids) && bidUserIdAsEids.length > 0) {
     deepSetValue(payload, 'user.eids', bidUserIdAsEids);
+    deepSetValue(payload, 'user.ext.eids', bidUserIdAsEids);
   }
 }
 
@@ -1108,6 +1109,7 @@ export const spec = {
 
     payload.user.gender = (conf.gender ? conf.gender.trim() : UNDEFINED);
     payload.user.geo = {};
+    payload.user.ext = payload.user.ext || {};
     payload.user.geo.lat = _parseSlotParam('lat', conf.lat);
     payload.user.geo.lon = _parseSlotParam('lon', conf.lon);
     payload.user.yob = _parseSlotParam('yob', conf.yob);

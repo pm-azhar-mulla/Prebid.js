@@ -2123,6 +2123,16 @@ describe('PubMatic adapter', function () {
               }
             }]
           }]);
+          expect(data.user.ext.eids).to.deep.equal([{
+            'source': 'adserver.org',
+            'uids': [{
+              'id': 'TTD_ID_FROM_USER_ID_MODULE',
+              'atype': 1,
+              'ext': {
+                'rtiPartner': 'TDID'
+              }
+            }]
+          }]);
         });
 
         it('Request should have adsrvrOrgId from UserId Module if config and userId module both have TTD ID', function() {
@@ -2151,12 +2161,23 @@ describe('PubMatic adapter', function () {
               }
             }]
           }]);
+          expect(data.user.ext.eids).to.deep.equal([{
+            'source': 'adserver.org',
+            'uids': [{
+              'id': 'TTD_ID_FROM_USER_ID_MODULE',
+              'atype': 1,
+              'ext': {
+                'rtiPartner': 'TDID'
+              }
+            }]
+          }]);
         });
 
         it('Request should NOT have adsrvrOrgId params if userId is NOT object', function() {
           let request = spec.buildRequests(bidRequests, {});
           let data = JSON.parse(request.data);
           expect(data.user.eids).to.deep.equal(undefined);
+          expect(data.user.ext.eids).to.deep.equal(undefined);
         });
 
         it('Request should NOT have adsrvrOrgId params if userId.tdid is NOT string', function() {
@@ -2166,6 +2187,7 @@ describe('PubMatic adapter', function () {
           let request = spec.buildRequests(bidRequests, {});
           let data = JSON.parse(request.data);
           expect(data.user.eids).to.deep.equal(undefined);
+          expect(data.user.ext.eids).to.deep.equal(undefined);
         });
       });
 
@@ -2184,6 +2206,13 @@ describe('PubMatic adapter', function () {
                 'atype': 1
               }]
             }]);
+            expect(data.user.ext.eids).to.deep.equal([{
+              'source': 'pubcid.org',
+              'uids': [{
+                'id': 'pub_common_user_id',
+                'atype': 1
+              }]
+            }]);
           });
 
           it('do not pass if not string', function() {
@@ -2193,21 +2222,25 @@ describe('PubMatic adapter', function () {
             let request = spec.buildRequests(bidRequests, {});
             let data = JSON.parse(request.data);
             expect(data.user.eids).to.equal(undefined);
+            expect(data.user.ext.eids).to.equal(undefined);
             bidRequests[0].userId.pubcid = [];
             bidRequests[0].userIdAsEids = createEidsArray(bidRequests[0].userId);
             request = spec.buildRequests(bidRequests, {});
             data = JSON.parse(request.data);
             expect(data.user.eids).to.equal(undefined);
+            expect(data.user.ext.eids).to.equal(undefined);
             bidRequests[0].userId.pubcid = null;
             bidRequests[0].userIdAsEids = createEidsArray(bidRequests[0].userId);
             request = spec.buildRequests(bidRequests, {});
             data = JSON.parse(request.data);
             expect(data.user.eids).to.equal(undefined);
+            expect(data.user.ext.eids).to.equal(undefined);
             bidRequests[0].userId.pubcid = {};
             bidRequests[0].userIdAsEids = createEidsArray(bidRequests[0].userId);
             request = spec.buildRequests(bidRequests, {});
             data = JSON.parse(request.data);
             expect(data.user.eids).to.equal(undefined);
+            expect(data.user.ext.eids).to.equal(undefined);
           });
         });
 
@@ -2225,6 +2258,13 @@ describe('PubMatic adapter', function () {
                 'atype': 1
               }]
             }]);
+            expect(data.user.ext.eids).to.deep.equal([{
+              'source': 'id5-sync.com',
+              'uids': [{
+                'id': 'id5-user-id',
+                'atype': 1
+              }]
+            }]);
           });
 
           it('do not pass if not string', function() {
@@ -2234,21 +2274,25 @@ describe('PubMatic adapter', function () {
             let request = spec.buildRequests(bidRequests, {});
             let data = JSON.parse(request.data);
             expect(data.user.eids).to.equal(undefined);
+            expect(data.user.ext.eids).to.equal(undefined);
             bidRequests[0].userId.id5id = { uid: [] };
             bidRequests[0].userIdAsEids = createEidsArray(bidRequests[0].userId);
             request = spec.buildRequests(bidRequests, {});
             data = JSON.parse(request.data);
             expect(data.user.eids).to.equal(undefined);
+            expect(data.user.ext.eids).to.equal(undefined);
             bidRequests[0].userId.id5id = { uid: null };
             bidRequests[0].userIdAsEids = createEidsArray(bidRequests[0].userId);
             request = spec.buildRequests(bidRequests, {});
             data = JSON.parse(request.data);
             expect(data.user.eids).to.equal(undefined);
+            expect(data.user.ext.eids).to.equal(undefined);
             bidRequests[0].userId.id5id = { uid: {} };
             bidRequests[0].userIdAsEids = createEidsArray(bidRequests[0].userId);
             request = spec.buildRequests(bidRequests, {});
             data = JSON.parse(request.data);
             expect(data.user.eids).to.equal(undefined);
+            expect(data.user.ext.eids).to.equal(undefined);
           });
         });
 
@@ -2266,6 +2310,13 @@ describe('PubMatic adapter', function () {
                 'atype': 1
               }]
             }]);
+            expect(data.user.ext.eids).to.deep.equal([{
+              'source': 'criteo.com',
+              'uids': [{
+                'id': 'criteo-user-id',
+                'atype': 1
+              }]
+            }]);
           });
 
           it('do not pass if not string', function() {
@@ -2275,21 +2326,25 @@ describe('PubMatic adapter', function () {
             let request = spec.buildRequests(bidRequests, {});
             let data = JSON.parse(request.data);
             expect(data.user.eids).to.equal(undefined);
+            expect(data.user.ext.eids).to.equal(undefined);
             bidRequests[0].userId.criteoId = [];
             bidRequests[0].userIdAsEids = createEidsArray(bidRequests[0].userId);
             request = spec.buildRequests(bidRequests, {});
             data = JSON.parse(request.data);
             expect(data.user.eids).to.equal(undefined);
+            expect(data.user.ext.eids).to.equal(undefined);
             bidRequests[0].userId.criteoId = null;
             bidRequests[0].userIdAsEids = createEidsArray(bidRequests[0].userId);
             request = spec.buildRequests(bidRequests, {});
             data = JSON.parse(request.data);
             expect(data.user.eids).to.equal(undefined);
+            expect(data.user.ext.eids).to.equal(undefined);
             bidRequests[0].userId.criteoId = {};
             bidRequests[0].userIdAsEids = createEidsArray(bidRequests[0].userId);
             request = spec.buildRequests(bidRequests, {});
             data = JSON.parse(request.data);
             expect(data.user.eids).to.equal(undefined);
+            expect(data.user.ext.eids).to.equal(undefined);
           });
         });
 
@@ -2307,6 +2362,13 @@ describe('PubMatic adapter', function () {
                 'atype': 3
               }]
             }]);
+            expect(data.user.ext.eids).to.deep.equal([{
+              'source': 'liveramp.com',
+              'uids': [{
+                'id': 'identity-link-user-id',
+                'atype': 3
+              }]
+            }]);
           });
 
           it('do not pass if not string', function() {
@@ -2316,21 +2378,25 @@ describe('PubMatic adapter', function () {
             let request = spec.buildRequests(bidRequests, {});
             let data = JSON.parse(request.data);
             expect(data.user.eids).to.equal(undefined);
+            expect(data.user.ext.eids).to.equal(undefined);
             bidRequests[0].userId.idl_env = [];
             bidRequests[0].userIdAsEids = createEidsArray(bidRequests[0].userId);
             request = spec.buildRequests(bidRequests, {});
             data = JSON.parse(request.data);
             expect(data.user.eids).to.equal(undefined);
+            expect(data.user.ext.eids).to.equal(undefined);
             bidRequests[0].userId.idl_env = null;
             bidRequests[0].userIdAsEids = createEidsArray(bidRequests[0].userId);
             request = spec.buildRequests(bidRequests, {});
             data = JSON.parse(request.data);
             expect(data.user.eids).to.equal(undefined);
+            expect(data.user.ext.eids).to.equal(undefined);
             bidRequests[0].userId.idl_env = {};
             bidRequests[0].userIdAsEids = createEidsArray(bidRequests[0].userId);
             request = spec.buildRequests(bidRequests, {});
             data = JSON.parse(request.data);
             expect(data.user.eids).to.equal(undefined);
+            expect(data.user.ext.eids).to.equal(undefined);
           });
         });
 
@@ -2348,6 +2414,13 @@ describe('PubMatic adapter', function () {
                 'atype': 3
               }]
             }]);
+            expect(data.user.ext.eids).to.deep.equal([{
+              'source': 'liveintent.com',
+              'uids': [{
+                'id': 'live-intent-user-id',
+                'atype': 3
+              }]
+            }]);
           });
 
           it('do not pass if not string', function() {
@@ -2357,21 +2430,25 @@ describe('PubMatic adapter', function () {
             let request = spec.buildRequests(bidRequests, {});
             let data = JSON.parse(request.data);
             expect(data.user.eids).to.equal(undefined);
+            expect(data.user.ext.eids).to.equal(undefined);
             bidRequests[0].userId.lipb.lipbid = [];
             bidRequests[0].userIdAsEids = createEidsArray(bidRequests[0].userId);
             request = spec.buildRequests(bidRequests, {});
             data = JSON.parse(request.data);
             expect(data.user.eids).to.equal(undefined);
+            expect(data.user.ext.eids).to.equal(undefined);
             bidRequests[0].userId.lipb.lipbid = null;
             bidRequests[0].userIdAsEids = createEidsArray(bidRequests[0].userId);
             request = spec.buildRequests(bidRequests, {});
             data = JSON.parse(request.data);
             expect(data.user.eids).to.equal(undefined);
+            expect(data.user.ext.eids).to.equal(undefined);
             bidRequests[0].userId.lipb.lipbid = {};
             bidRequests[0].userIdAsEids = createEidsArray(bidRequests[0].userId);
             request = spec.buildRequests(bidRequests, {});
             data = JSON.parse(request.data);
             expect(data.user.eids).to.equal(undefined);
+            expect(data.user.ext.eids).to.equal(undefined);
           });
         });
 
@@ -2389,6 +2466,13 @@ describe('PubMatic adapter', function () {
                 'atype': 1
               }]
             }]);
+            expect(data.user.ext.eids).to.deep.equal([{
+              'source': 'parrable.com',
+              'uids': [{
+                'id': 'parrable-user-id',
+                'atype': 1
+              }]
+            }]);
           });
 
           it('do not pass if not object with eid key', function() {
@@ -2398,21 +2482,25 @@ describe('PubMatic adapter', function () {
             let request = spec.buildRequests(bidRequests, {});
             let data = JSON.parse(request.data);
             expect(data.user.eids).to.equal(undefined);
+            expect(data.user.ext.eids).to.equal(undefined);
             bidRequests[0].userId.parrableid = [];
             bidRequests[0].userIdAsEids = createEidsArray(bidRequests[0].userId);
             request = spec.buildRequests(bidRequests, {});
             data = JSON.parse(request.data);
             expect(data.user.eids).to.equal(undefined);
+            expect(data.user.ext.eids).to.equal(undefined);
             bidRequests[0].userId.parrableid = null;
             bidRequests[0].userIdAsEids = createEidsArray(bidRequests[0].userId);
             request = spec.buildRequests(bidRequests, {});
             data = JSON.parse(request.data);
             expect(data.user.eids).to.equal(undefined);
+            expect(data.user.ext.eids).to.equal(undefined);
             bidRequests[0].userId.parrableid = {};
             bidRequests[0].userIdAsEids = createEidsArray(bidRequests[0].userId);
             request = spec.buildRequests(bidRequests, {});
             data = JSON.parse(request.data);
             expect(data.user.eids).to.equal(undefined);
+            expect(data.user.ext.eids).to.equal(undefined);
           });
         });
 
@@ -2430,6 +2518,13 @@ describe('PubMatic adapter', function () {
                 'atype': 3
               }]
             }]);
+            expect(data.user.ext.eids).to.deep.equal([{
+              'source': 'britepool.com',
+              'uids': [{
+                'id': 'britepool-user-id',
+                'atype': 3
+              }]
+            }]);
           });
 
           it('do not pass if not string', function() {
@@ -2439,21 +2534,25 @@ describe('PubMatic adapter', function () {
             let request = spec.buildRequests(bidRequests, {});
             let data = JSON.parse(request.data);
             expect(data.user.eids).to.equal(undefined);
+            expect(data.user.ext.eids).to.equal(undefined);
             bidRequests[0].userId.britepoolid = [];
             bidRequests[0].userIdAsEids = createEidsArray(bidRequests[0].userId);
             request = spec.buildRequests(bidRequests, {});
             data = JSON.parse(request.data);
             expect(data.user.eids).to.equal(undefined);
+            expect(data.user.ext.eids).to.equal(undefined);
             bidRequests[0].userId.britepoolid = null;
             bidRequests[0].userIdAsEids = createEidsArray(bidRequests[0].userId);
             request = spec.buildRequests(bidRequests, {});
             data = JSON.parse(request.data);
             expect(data.user.eids).to.equal(undefined);
+            expect(data.user.ext.eids).to.equal(undefined);
             bidRequests[0].userId.britepoolid = {};
             bidRequests[0].userIdAsEids = createEidsArray(bidRequests[0].userId);
             request = spec.buildRequests(bidRequests, {});
             data = JSON.parse(request.data);
             expect(data.user.eids).to.equal(undefined);
+            expect(data.user.ext.eids).to.equal(undefined);
           });
         });
 
@@ -2471,6 +2570,13 @@ describe('PubMatic adapter', function () {
                 'atype': 1
               }]
             }]);
+            expect(data.user.ext.eids).to.deep.equal([{
+              'source': 'netid.de',
+              'uids': [{
+                'id': 'netid-user-id',
+                'atype': 1
+              }]
+            }]);
           });
 
           it('do not pass if not string', function() {
@@ -2480,21 +2586,25 @@ describe('PubMatic adapter', function () {
             let request = spec.buildRequests(bidRequests, {});
             let data = JSON.parse(request.data);
             expect(data.user.eids).to.equal(undefined);
+            expect(data.user.ext.eids).to.equal(undefined);
             bidRequests[0].userId.netId = [];
             bidRequests[0].userIdAsEids = createEidsArray(bidRequests[0].userId);
             request = spec.buildRequests(bidRequests, {});
             data = JSON.parse(request.data);
             expect(data.user.eids).to.equal(undefined);
+            expect(data.user.ext.eids).to.equal(undefined);
             bidRequests[0].userId.netId = null;
             bidRequests[0].userIdAsEids = createEidsArray(bidRequests[0].userId);
             request = spec.buildRequests(bidRequests, {});
             data = JSON.parse(request.data);
             expect(data.user.eids).to.equal(undefined);
+            expect(data.user.ext.eids).to.equal(undefined);
             bidRequests[0].userId.netId = {};
             bidRequests[0].userIdAsEids = createEidsArray(bidRequests[0].userId);
             request = spec.buildRequests(bidRequests, {});
             data = JSON.parse(request.data);
             expect(data.user.eids).to.equal(undefined);
+            expect(data.user.ext.eids).to.equal(undefined);
           });
         });
       });
