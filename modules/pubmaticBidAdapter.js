@@ -802,7 +802,6 @@ function _addFloorFromFloorModule(impObj, bid) {
 function _handleEids(payload, validBidRequests) {
   let bidUserIdAsEids = deepAccess(validBidRequests, '0.userIdAsEids');
   if (isArray(bidUserIdAsEids) && bidUserIdAsEids.length > 0) {
-    deepSetValue(payload, 'user.eids', bidUserIdAsEids);
     deepSetValue(payload, 'user.ext.eids', bidUserIdAsEids);
   }
 }
