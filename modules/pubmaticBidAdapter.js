@@ -1334,17 +1334,18 @@ export const spec = {
 
               prepareMetaObject(newBid, bid, seatbidder.seat);
 
-              // adserverTargeting
-              if (seatbidder.ext && seatbidder.ext.buyid) {
-                newBid.adserverTargeting = {
-                  'hb_buyid_pubmatic': seatbidder.ext.buyid
-                };
-              }
-
               // if from the server-response the bid.ext.marketplace is set then
-              //    submit the bid to Prebid as marketplace name
+              // submit the bid to Prebid as marketplace name
               if (bid.ext && !!bid.ext.marketplace) {
                 newBid.bidderCode = bid.ext.marketplace;
+              }
+
+              // adserverTargeting
+              if (seatbidder.ext && seatbidder.ext.buyid) {
+                let targetingKeyBidder = newBid.bidderCode ? newBid.bidderCode : BIDDER_CODE;
+                newBid.adserverTargeting = {
+                  [`hb_buyid_${targetingKeyBidder}`]: seatbidder.ext.buyid
+                };
               }
 
               bidResponses.push(newBid);

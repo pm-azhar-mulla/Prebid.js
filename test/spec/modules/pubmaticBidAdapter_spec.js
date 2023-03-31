@@ -4056,6 +4056,7 @@ describe('PubMatic adapter', function () {
       let response = spec.interpretResponse(newBidResponses, request);
       expect(response).to.be.an('array').with.length.above(0);
       expect(response[0].bidderCode).to.equal('groupm');
+      expect(response[0].adserverTargeting.hb_buyid_groupm).to.equal('BUYER-ID-987');
     });
   });
 });
