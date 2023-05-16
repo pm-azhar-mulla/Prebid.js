@@ -1,7 +1,6 @@
 import {expect} from 'chai';
 import {
   spec as adapter,
-  SUPPORTED_ID_SYSTEMS,
   createDomain,
   hashCode,
   extractPID,
@@ -20,6 +19,8 @@ import {version} from 'package.json';
 import {useFakeTimers} from 'sinon';
 import {BANNER, VIDEO} from '../../../src/mediaTypes';
 import {config} from '../../../src/config';
+
+export const TEST_ID_SYSTEMS = ['britepoolid', 'criteoId', 'id5id', 'idl_env', 'lipb', 'netId', 'parrableId', 'pubcid', 'tdid', 'pubProvidedId'];
 
 const SUB_DOMAIN = 'openrtb';
 
@@ -477,6 +478,19 @@ describe('VidazooBidAdapter', function () {
       });
     });
 
+    it('should get meta from response metaData', function () {
+      const serverResponse = utils.deepClone(SERVER_RESPONSE);
+      serverResponse.body.results[0].metaData = {
+        advertiserDomains: ['vidazoo.com'],
+        agencyName: 'Agency Name',
+      };
+      const responses = adapter.interpretResponse(serverResponse, REQUEST);
+      expect(responses[0].meta).to.deep.equal({
+        advertiserDomains: ['vidazoo.com'],
+        agencyName: 'Agency Name'
+      });
+    });
+
     it('should return an array of interpreted video responses', function () {
       const responses = adapter.interpretResponse(VIDEO_SERVER_RESPONSE, REQUEST);
       expect(responses).to.have.length(1);
@@ -507,7 +521,7 @@ describe('VidazooBidAdapter', function () {
   });
 
   describe('user id system', function () {
-    Object.keys(SUPPORTED_ID_SYSTEMS).forEach((idSystemProvider) => {
+    TEST_ID_SYSTEMS.forEach((idSystemProvider) => {
       const id = Date.now().toString();
       const bid = utils.deepClone(BID);
 

@@ -600,7 +600,7 @@ describe('the rubicon adapter', function () {
           sandbox.stub(Math, 'random').callsFake(() => 0.1);
           let [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
 
-          const referenceOrdering = ['account_id', 'site_id', 'zone_id', 'size_id', 'alt_size_ids', 'p_pos', 'rf', 'p_geo.latitude', 'p_geo.longitude', 'kw', 'tg_v.ucat', 'tg_v.lastsearch', 'tg_v.likes', 'tg_i.rating', 'tg_i.prodtype', 'tk_flint', 'x_source.tid', 'l_pb_bid_id', 'p_screen_res', 'rp_secure', 'tk_user_key', 'tg_fl.eid', 'rp_maxbids', 'slots', 'rand'];
+          const referenceOrdering = ['account_id', 'site_id', 'zone_id', 'size_id', 'alt_size_ids', 'p_pos', 'rf', 'p_geo.latitude', 'p_geo.longitude', 'kw', 'tg_v.ucat', 'tg_v.lastsearch', 'tg_v.likes', 'tg_i.rating', 'tg_i.prodtype', 'tk_flint', 'x_source.tid', 'l_pb_bid_id', 'p_screen_res', 'rp_secure', 'tk_user_key', 'x_imp.ext.tid', 'tg_fl.eid', 'rp_maxbids', 'slots', 'rand'];
 
           request.data.split('&').forEach((item, i) => {
             expect(item.split('=')[0]).to.equal(referenceOrdering[i]);
@@ -619,6 +619,7 @@ describe('the rubicon adapter', function () {
             'rand': '0.1',
             'tk_flint': INTEGRATION,
             'x_source.tid': 'd45dd707-a418-42ec-b8a7-b70a6c6fab0b',
+            'x_imp.ext.tid': 'd45dd707-a418-42ec-b8a7-b70a6c6fab0b',
             'p_screen_res': /\d+x\d+/,
             'tk_user_key': '12346',
             'kw': 'a,b,c',
@@ -3417,6 +3418,74 @@ describe('the rubicon adapter', function () {
               closeButton: true,
               collapse: true,
               height: 320,
+              label: undefined,
+              placement: {
+                align: 'left',
+                attachTo: adUnit,
+                position: 'append',
+              },
+              vastUrl: 'https://test.com/vast.xml',
+              width: 640
+            });
+            // cleanup
+            adUnit.parentNode.removeChild(adUnit);
+          });
+
+          it('should render ad with Magnite renderer without video object', function () {
+            delete bidderRequest.bids[0].params.video;
+            bidderRequest.bids[0].params.bidonmultiformat = true;
+            bidderRequest.bids[0].mediaTypes.video.placement = 3;
+            bidderRequest.bids[0].mediaTypes.video.playerSize = [640, 480];
+
+            let response = {
+              cur: 'USD',
+              seatbid: [{
+                bid: [{
+                  id: '0',
+                  impid: '/19968336/header-bid-tag-0',
+                  adomain: ['test.com'],
+                  price: 2,
+                  crid: '4259970',
+                  ext: {
+                    bidder: {
+                      rp: {
+                        mime: 'application/javascript',
+                        size_id: 201,
+                        advid: 12345
+                      }
+                    },
+                    prebid: {
+                      targeting: {
+                        hb_uuid: '0c498f63-5111-4bed-98e2-9be7cb932a64'
+                      },
+                      type: 'video'
+                    }
+                  },
+                  nurl: 'https://test.com/vast.xml'
+                }],
+                group: 0,
+                seat: 'rubicon'
+              }],
+            };
+
+            const request = converter.toORTB({bidderRequest, bidRequests: bidderRequest.bids});
+
+            sinon.spy(window.MagniteApex, 'renderAd');
+
+            let bids = spec.interpretResponse({body: response}, {data: request});
+            const bid = bids[0];
+            bid.adUnitCode = 'outstream_video1_placement';
+            const adUnit = document.createElement('div');
+            adUnit.id = bid.adUnitCode;
+            document.body.appendChild(adUnit);
+
+            bid.renderer.render(bid);
+
+            const renderCall = window.MagniteApex.renderAd.getCall(0);
+            expect(renderCall.args[0]).to.deep.equal({
+              closeButton: true,
+              collapse: true,
+              height: 480,
               label: undefined,
               placement: {
                 align: 'left',
