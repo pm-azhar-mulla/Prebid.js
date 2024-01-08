@@ -1,5 +1,6 @@
 import { expect } from 'chai';
-import { spec } from 'modules/discoveryBidAdapter.js';
+import { spec, getPmgUID, storage } from 'modules/discoveryBidAdapter.js';
+import * as utils from 'src/utils.js';
 
 describe('discovery:BidAdapterTests', function () {
   let bidRequestData = {
@@ -11,11 +12,58 @@ describe('discovery:BidAdapterTests', function () {
         bidder: 'discovery',
         params: {
           token: 'd0f4902b616cc5c38cbe0a08676d0ed9',
+          siteId: 'siteId_01',
+          zoneId: 'zoneId_01',
+          publisher: '52',
+          position: 'left',
+          referrer: 'https://discovery.popin.cc',
+        },
+        refererInfo: {
+          page: 'https://discovery.popin.cc',
+          stack: [
+            'a.com',
+            'b.com'
+          ]
         },
         mediaTypes: {
           banner: {
             sizes: [[300, 250]],
+            pos: 'left',
           },
+        },
+        ortb2: {
+          user: {
+            ext: {
+              data: {
+                CxSegments: []
+              }
+            }
+          },
+          site: {
+            domain: 'discovery.popin.cc',
+            publisher: {
+              domain: 'discovery.popin.cc'
+            },
+            page: 'https://discovery.popin.cc',
+            cat: ['IAB-19', 'IAB-20'],
+          },
+        },
+        ortb2Imp: {
+          ext: {
+            gpid: 'adslot_gpid',
+            tid: 'tid_01',
+            data: {
+              browsi: {
+                browsiViewability: 'NA',
+              },
+              adserver: {
+                name: 'adserver_name',
+                adslot: 'adslot_name',
+              },
+              keywords: ['travel', 'sport'],
+              pbadslot: '202309999'
+            }
+          }
         },
         adUnitCode: 'regular_iframe',
         transactionId: 'd163f9e2-7ecd-4c2c-a3bd-28ceb52a60ee',
@@ -49,6 +97,47 @@ describe('discovery:BidAdapterTests', function () {
     request = spec.buildRequests(bidRequestData.bids, bidRequestData);
     let req_data = JSON.parse(request.data);
     expect(req_data.imp).to.have.lengthOf(1);
+  });
+
+  describe('discovery: buildRequests', function() {
+    describe('getPmgUID function', function() {
+      let sandbox;
+
+      beforeEach(() => {
+        sandbox = sinon.sandbox.create();
+        sandbox.stub(storage, 'getCookie');
+        sandbox.stub(storage, 'setCookie');
+        sandbox.stub(utils, 'generateUUID').returns('new-uuid');
+        sandbox.stub(storage, 'cookiesAreEnabled');
+      })
+
+      afterEach(() => {
+        sandbox.restore();
+      });
+
+      it('should generate new UUID and set cookie if not exists', () => {
+        storage.cookiesAreEnabled.callsFake(() => true);
+        storage.getCookie.callsFake(() => null);
+        const uid = getPmgUID();
+        expect(uid).to.equal('new-uuid');
+        expect(storage.setCookie.calledOnce).to.be.true;
+      });
+
+      it('should return existing UUID from cookie', () => {
+        storage.cookiesAreEnabled.callsFake(() => true);
+        storage.getCookie.callsFake(() => 'existing-uuid');
+        const uid = getPmgUID();
+        expect(uid).to.equal('existing-uuid');
+        expect(storage.setCookie.called).to.be.false;
+      });
+
+      it('should not set new UUID when cookies are not enabled', () => {
+        storage.cookiesAreEnabled.callsFake(() => false);
+        storage.getCookie.callsFake(() => null);
+        getPmgUID();
+        expect(storage.setCookie.calledOnce).to.be.false;
+      });
+    })
   });
 
   it('discovery:validate_response_params', function () {
@@ -89,5 +178,43 @@ describe('discovery:BidAdapterTests', function () {
     expect(bid.width).to.equal(300);
     expect(bid.height).to.equal(250);
     expect(bid.currency).to.equal('USD');
+  });
+
+  describe('discovery: getUserSyncs', function() {
+    const COOKY_SYNC_IFRAME_URL = 'https://asset.popin.cc/js/cookieSync.html';
+    const IFRAME_ENABLED = {
+      iframeEnabled: true,
+      pixelEnabled: false,
+    };
+    const IFRAME_DISABLED = {
+      iframeEnabled: false,
+      pixelEnabled: false,
+    };
+    const GDPR_CONSENT = {
+      consentString: 'gdprConsentString',
+      gdprApplies: true
+    };
+    const USP_CONSENT = {
+      consentString: 'uspConsentString'
+    }
+
+    let syncParamUrl = `dm=${encodeURIComponent(location.origin || `https://${location.host}`)}`;
+    syncParamUrl += '&gdpr=1&gdpr_consent=gdprConsentString&ccpa_consent=uspConsentString';
+    const expectedIframeSyncs = [
+      {
+        type: 'iframe',
+        url: `${COOKY_SYNC_IFRAME_URL}?${syncParamUrl}`
+      }
+    ];
+
+    it('should return nothing if iframe is disabled', () => {
+      const userSyncs = spec.getUserSyncs(IFRAME_DISABLED, undefined, GDPR_CONSENT, USP_CONSENT, undefined);
+      expect(userSyncs).to.be.undefined;
+    });
+
+    it('should do userSyncs if iframe is enabled', () => {
+      const userSyncs = spec.getUserSyncs(IFRAME_ENABLED, undefined, GDPR_CONSENT, USP_CONSENT, undefined);
+      expect(userSyncs).to.deep.equal(expectedIframeSyncs);
+    });
   });
 });
