@@ -1,7 +1,6 @@
 import {
   createIframe,
   createInvisibleIframe,
-  deepAccess,
   inIframe,
   insertElement,
   logError,
@@ -182,14 +181,14 @@ export function handleRender({renderFn, resizeFn, adId, options, bidResponse, do
     if (bidResponse.status === BID_STATUS.RENDERED) {
       logWarn(`Ad id ${adId} has been rendered before`);
       events.emit(STALE_RENDER, bidResponse);
-      if (deepAccess(config.getConfig('auctionOptions'), 'suppressStaleRender')) {
+      if (config.getConfig('auctionOptions')?.suppressStaleRender) {
         return;
       }
     }
     if (!filters.isBidNotExpired(bidResponse)) {
       logWarn(`Ad id ${adId} has been expired`);
       events.emit(EXPIRED_RENDER, bidResponse);
-      if (deepAccess(config.getConfig('auctionOptions'), 'suppressExpiredRender')) {
+      if (config.getConfig('auctionOptions')?.suppressExpiredRender) {
         return;
       }
     }
@@ -264,7 +263,7 @@ export function renderAdDirect(doc, adId, options) {
     if (adData.ad) {
       doc.write(adData.ad);
       doc.close();
-      emitAdRenderSucceeded({doc, bid, adId: bid.adId});
+      emitAdRenderSucceeded({doc, bid, id: bid.adId});
     } else {
       getCreativeRenderer(bid)
         .then(render => render(adData, {
@@ -272,7 +271,7 @@ export function renderAdDirect(doc, adId, options) {
           mkFrame: createIframe,
         }, doc.defaultView))
         .then(
-          () => emitAdRenderSucceeded({doc, bid, adId: bid.adId}),
+          () => emitAdRenderSucceeded({doc, bid, id: bid.adId}),
           (e) => {
             fail(e?.reason || AD_RENDER_FAILED_REASON.EXCEPTION, e?.message)
             e?.stack && logError(e);
