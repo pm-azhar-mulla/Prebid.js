@@ -6,7 +6,7 @@ window.PWT = window.PWT || {};
 window.PWT.renderAllAdUnits = function() {
     var winners=pbjs.getHighestCpmBids();
     for (var i = 0; i < winners.length; i++) {
-        renderOne(winners[i]);
+        window.PWT.renderOne(winners[i]);
     }
 }
 
