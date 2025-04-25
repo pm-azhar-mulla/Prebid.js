@@ -1,8 +1,8 @@
+import { getCurrencyFromBidderRequest } from '../libraries/ortb2Utils/currency.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { config } from '../src/config.js';
 import { BANNER, NATIVE } from '../src/mediaTypes.js';
 import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
-import { _each, _map, deepAccess, deepSetValue, formatQS, triggerPixel } from '../src/utils.js';
+import { _each, _map, deepAccess, deepSetValue, formatQS, triggerPixel, logInfo } from '../src/utils.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
@@ -55,6 +55,7 @@ const DEFAULT_CURRENCY = 'EUR';
  */
 const SUPPORTED_MEDIA_TYPES = [BANNER, NATIVE];
 const SSP_ID = 10500;
+const ADAPTER_VERSION = '2.0.0';
 
 const IMAGE_ASSET_TYPES = {
   ICON: 1,
@@ -128,7 +129,7 @@ export const spec = {
       timeout = bidderRequest.timeout;
     }
 
-    const adServerCurrency = config.getConfig('currency.adServerCurrency');
+    const adServerCurrency = getCurrencyFromBidderRequest(bidderRequest);
 
     return validBidRequests.map((bidRequest) => {
       const { params } = bidRequest;
@@ -139,6 +140,7 @@ export const spec = {
       const queryParams = {
         'imp-id': impId,
         'target-ref': targetRef || ortb2?.site?.domain,
+        'adapter-version': ADAPTER_VERSION,
         'ssp-id': SSP_ID,
       };
 
@@ -153,6 +155,8 @@ export const spec = {
         id: impId,
         banner: mapBanner(bidRequest),
         native: mapNative(bidRequest),
+        displaymanager: 'Prebid.js',
+        displaymanagerver: '$prebid.version$',
       };
 
       const bidfloor = getBidfloor(bidRequest);
@@ -175,13 +179,20 @@ export const spec = {
         device: ortb2?.device,
       };
 
+      if (!data?.site?.content?.language) {
+        const documentLang = deepAccess(ortb2, 'site.ext.data.documentLang');
+        if (documentLang) {
+          deepSetValue(data, 'site.content.language', documentLang);
+        }
+      }
+
       const eids = deepAccess(bidRequest, 'userIdAsEids');
       if (eids && eids.length) {
         deepSetValue(data, 'user.ext.eids', eids);
       }
 
       const queryParamsString = formatQS(queryParams);
-      return {
+      const request = {
         method: 'POST',
         url: BIDDER_URL + `/${pageId}?${queryParamsString}`,
         data,
@@ -190,6 +201,10 @@ export const spec = {
         },
         bidRequest,
       };
+
+      logInfo('ServerRequest', request);
+
+      return request;
     });
   },
 
