@@ -1,5 +1,5 @@
 import { submodule } from '../src/hook.js';
-import { logError, mergeDeep } from '../src/utils.js';
+import { logError, mergeDeep, logMessage } from '../src/utils.js';
 /**
  * @typedef {import('../modules/rtdModule/index.js').RtdSubmodule} RtdSubmodule
  */
@@ -26,7 +26,7 @@ const isIabCategoryInLocalStorage = () => {
         return categoriesObject[currentUrl];
       }
     } catch (e) {
-      console.error(`${CONSTANTS.LOG_PRE_FIX} Error parsing localStorage:`, e);
+      logError(`${CONSTANTS.LOG_PRE_FIX} Error parsing localStorage:`, e);
     }
   }
   
@@ -40,8 +40,8 @@ const isIabCategoryInLocalStorage = () => {
  * @returns {boolean}
  */
 const init = async (config, _userConsent) => {
-    console.log("ChromeAi : config", config);
-    //console.log("ChromeAi : _userConsent", _userConsent);
+    logMessage("ChromeAi : config", config);
+    //logMessage("ChromeAi : _userConsent", _userConsent);
     const options = {
         type: 'teaser',
         format: 'markdown',
@@ -55,7 +55,7 @@ const init = async (config, _userConsent) => {
       if (!storedCategories) {
         const available = (await self.ai.summarizer.capabilities()).available;
         let summarizer;
-        console.log("summarizer api status:",available);
+        logMessage("summarizer api status:",available);
         console.time("summarizerApiTime");
         if (available === 'no') {
             // The Summarizer API isn't usable.
@@ -67,9 +67,9 @@ const init = async (config, _userConsent) => {
         } else {
             // The Summarizer API can be used after the model is downloaded.
             summarizer = await self.ai.summarizer.create(options);
-            console.log("Azzi123 >> summarizer >> ", summarizer);
+            logMessage("Azzi123 >> summarizer >> ", summarizer);
             summarizer.addEventListener('downloadprogress', (e) => {
-            console.log(e.loaded, e.total);
+            logMessage(e.loaded, e.total);
             });
             await summarizer.ready;
         }
@@ -78,7 +78,7 @@ const init = async (config, _userConsent) => {
             context: 'This article is intended for a sports audience.',
         });
         console.timeEnd("summarizerApiTime");
-        console.log("Summary >> ", summary);
+        logMessage("Summary >> ", summary);
         
         console.time("IABMappingTime");
         // Get the existing categories object or create a new one
@@ -98,12 +98,12 @@ const init = async (config, _userConsent) => {
           categoriesObject[window.location.href] = iabCategories;
           // Save the updated object back to localStorage
           localStorage.setItem(CONSTANTS.STORAGE_KEY, JSON.stringify(categoriesObject));
-          console.log("IAB Categories from mapping:", iabCategories);
+          logMessage("IAB Categories from mapping:", iabCategories);
         } else {
-          console.log("No valid IAB categories found for this page");
+          logMessage("No valid IAB categories found for this page");
         }
       } else {
-        console.log("IAB Categories already in localStorage, skipping mapping", storedCategories);
+        logMessage("IAB Categories already in localStorage, skipping mapping", storedCategories);
       }
     
     return true;
@@ -116,12 +116,12 @@ const init = async (config, _userConsent) => {
  * @param {Object} userConsent
  */
 const getBidRequestData = (reqBidsConfigObj, callback) => {
-    console.log("ChromeAi : reqBidsConfigObj", reqBidsConfigObj);
+    logMessage("ChromeAi : reqBidsConfigObj", reqBidsConfigObj);
     
     // Check if IAB categories exist in localStorage
     const storedCategories = isIabCategoryInLocalStorage();
     if (storedCategories) {
-      console.log("Setting  IAB Categories from localStorage:", storedCategories);
+      logMessage("Setting  IAB Categories from localStorage:", storedCategories);
       mergeDeep(reqBidsConfigObj.ortb2Fragments.bidder, {
                     'pubmatic': {
                         site:{
@@ -130,9 +130,9 @@ const getBidRequestData = (reqBidsConfigObj, callback) => {
                     }
                 });
     } else {
-      console.log("No IAB Categories found in localStorage for current URL");
+      logMessage("No IAB Categories found in localStorage for current URL");
     }
-    console.log("after changing ",reqBidsConfigObj);
+    logMessage("after changing ",reqBidsConfigObj);
     
     callback();
 }
