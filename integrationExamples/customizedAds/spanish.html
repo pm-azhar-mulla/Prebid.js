@@ -1,0 +1,234 @@
+<!--
+  Esta página llama a un único postor para un único espacio publicitario. Puede considerarse un ejemplo de "hola mundo" para usar
+  Prebid con Google Publisher Tag.
+  También sirve como una buena página de prueba para nuevos adaptadores. Simplemente configure el objeto Bid Params de su servidor en el
+  array de ofertas dentro de adUnits, y usará su adaptador para cargar un anuncio.
+  NOTA: muchos servidores de anuncios no enviarán un anuncio si la URL es localhost... así que es posible que necesite
+  establecer un alias en su archivo /etc/hosts para poder cargar esta página desde un dominio diferente.
+-->
+
+<html>
+   <head>
+       <meta charset="UTF-8">
+       <title>El Rincón Culinario - Recetas y Gastronomía</title>
+       <script async src="../../build/dev/prebid.js"></script>
+       <script async src="https://www.googletagservices.com/tag/js/gpt.js"></script>
+       <script>
+           var FAILSAFE_TIMEOUT = 3300;
+           var PREBID_TIMEOUT = 3000;
+   
+           var adUnits = [{
+               code: 'div-gpt-ad-1460505748561-0',
+               mediaTypes: {
+                   banner: {
+                       sizes: [[728,90]],
+                   }
+               },            
+               // Replace this object to test a new Adapter!
+               bids: [{
+                       bidder: 'pubmatic',
+                       params: {
+                           publisherId: '103207',
+                           adUnit: 'dcomHomeTop-728x90'
+                       },
+                   },
+                   {bidder: "appnexus",
+                   params: {placementId: '8801674'}
+                     }
+   
+               ]
+           }];
+   
+           var pbjs = pbjs || {};
+           pbjs.que = pbjs.que || [];
+   
+       </script>
+   
+       <script>
+           var googletag = googletag || {};
+           googletag.cmd = googletag.cmd || [];
+           googletag.cmd.push(function() {
+               googletag.pubads().disableInitialLoad();
+           });
+   
+           pbjs.que.push(function() {
+   
+               pbjs.setConfig({
+                   enableTIDs: true,
+                   owCustomizedAds:{
+                       stickyAds: {
+                           enabled: true,
+                           divs: ["div-gpt-ad-1460505748561-0"]
+                       }
+                   },
+                   realTimeData: {
+                       auctionDelay: 300,
+                       dataProviders: [
+                           {
+                               name: "chromeAi",
+                               waitForIt: false,
+                               params: {
+                                   publisherId: "Azzi", // please contact PubMatic to get a publisherId for yourself
+                               },
+                           },
+                       ],
+                   },
+               });
+               pbjs.addAdUnits(adUnits);
+               pbjs.enableAnalytics({
+                   provider: 'pubmatic',
+                   options: {
+                       "publisherId": 103207 // please contact PubMatic to get a publisherId for yourself
+                   }
+               });
+               pbjs.requestBids({
+                   bidsBackHandler: sendAdserverRequest,
+                   timeout: PREBID_TIMEOUT
+               });
+           });
+   
+           function sendAdserverRequest() {
+               if (pbjs.adserverRequestSent) return;
+               pbjs.adserverRequestSent = true;
+               googletag.cmd.push(function() {
+                   pbjs.que.push(function() {
+                       pbjs.setTargetingForGPTAsync();
+                       googletag.pubads().refresh();
+                   });
+               });
+           }
+   
+           setTimeout(function() {
+               sendAdserverRequest();
+           }, FAILSAFE_TIMEOUT);
+   
+       </script>
+   
+       <script>
+           googletag.cmd.push(function () {
+               googletag.defineSlot('/19968336/header-bid-tag-0', [[728, 90], [300, 250]], 'div-gpt-ad-1460505748561-0').addService(googletag.pubads());
+   
+               googletag.pubads().enableSingleRequest();
+               googletag.enableServices();
+           });
+       </script>
+   </head>
+   
+   <body>
+   <h1>El Rincón Culinario</h1>
+   <h2>Las Mejores Recetas de la Gastronomía Española</h2>
+   <div id='div-gpt-ad-1460505748561-0' style="width:100%; height:300px; background-color: #faf2f3;">
+       <script type='text/javascript'>
+           googletag.cmd.push(function() { googletag.display('div-gpt-ad-1460505748561-0'); });
+       </script>
+   </div>
+   <div class="content-section">
+       <h3>Artículos Destacados de Cocina</h3>
+       
+       <article class="food-item">
+           <h4>La Paella Valenciana: El Tesoro Culinario de España</h4>
+           <p>La paella, originaria de Valencia, es uno de los platos más emblemáticos de la gastronomía española. Este plato de arroz, azafrán y una variedad de ingredientes como mariscos, pollo o conejo, representa la esencia de la cocina mediterránea.</p>
+           <p>"La verdadera paella valenciana lleva conejo, pollo, judías verdes y garrofón", explica María Fernández, chef del restaurante El Racó de la Paella. "El secreto está en el sofrito inicial y en no remover el arroz una vez añadido el caldo".</p>
+           <p>La paella tradicional se cocina en una sartén ancha y plana llamada 'paellera', preferiblemente sobre fuego de leña para conseguir ese característico sabor ahumado. El plato ha evolucionado con numerosas variantes regionales, pero mantiene su esencia como símbolo de reunión familiar y celebración.</p>
+           <p class="food-meta">Publicado: 1 de mayo de 2025 | Categoría: Cocina Tradicional</p>
+       </article>
+       
+       <article class="food-item">
+           <h4>Tapas Españolas: El Arte de la Pequeña Gastronomía</h4>
+           <p>Las tapas representan mucho más que una forma de comer; son una auténtica institución social en España. Estos pequeños aperitivos, que van desde las simples aceitunas hasta elaboradas creaciones culinarias, son el corazón de la vida social española.</p>
+           <p>"El tapeo es una forma de entender la vida", comenta José Martínez, experto en gastronomía. "Permite probar una gran variedad de sabores en una sola comida, mientras se disfruta de la compañía y la conversación".</p>
+           <p>Entre las tapas más populares encontramos la tortilla española, las croquetas, el jamón ibérico, los pimientos de Padrón y las patatas bravas. Cada región de España aporta sus propias especialidades al universo de las tapas, creando un mosaico gastronómico único en el mundo.</p>
+           <p class="food-meta">Publicado: 28 de abril de 2025 | Categoría: Cultura Gastronómica</p>
+       </article>
+       
+       <article class="food-item">
+           <h4>Gazpacho Andaluz: Frescura Líquida para el Verano</h4>
+           <p>El gazpacho, originario de Andalucía, es una sopa fría que representa la perfecta adaptación culinaria al caluroso clima del sur de España. Elaborado con tomates, pimientos, pepino, ajo y pan, todo batido con aceite de oliva y vinagre, es un plato refrescante y nutritivo.</p>
+           <p>"El gazpacho es un ejemplo perfecto de la cocina de aprovechamiento", explica Carmen Ruiz, historiadora gastronómica. "Surgió como una forma de utilizar el pan duro y las verduras de temporada, convirtiéndose en un plato esencial durante los meses de verano".</p>
+           <p>Hoy en día, el gazpacho ha trascendido fronteras y se ha convertido en un referente de la cocina saludable internacional. Existen numerosas variantes, como el salmorejo cordobés (más espeso y con menos ingredientes) o el ajoblanco malagueño (elaborado con almendras).</p>
+           <p class="food-meta">Publicado: 25 de abril de 2025 | Categoría: Recetas Tradicionales</p>
+       </article>
+       
+       <article class="food-item">
+           <h4>El Chocolate con Churros: El Desayuno Más Querido</h4>
+           <p>El chocolate con churros es una combinación que ha conquistado los corazones (y estómagos) de los españoles durante generaciones. Este dúo perfecto, que consiste en barras de masa frita espolvoreadas con azúcar y una taza de chocolate caliente y espeso para mojar, es mucho más que un simple desayuno.</p>
+           <p>"Los churros tienen su origen en la influencia árabe en la península ibérica", nos cuenta Pedro Sánchez, propietario de una churrería centenaria en Madrid. "La masa básica de harina, agua y sal se ha mantenido prácticamente sin cambios durante siglos".</p>
+           <p>Este manjar se disfruta tradicionalmente en las mañanas frías de invierno, después de una noche de fiesta, o como merienda en las tardes de otoño. Las churrerías, establecimientos especializados en su elaboración, son lugares de encuentro donde se mantiene viva esta deliciosa tradición española.</p>
+           <p class="food-meta">Publicado: 20 de abril de 2025 | Categoría: Dulces Tradicionales</p>
+       </article>
+   </div>
+
+   <style>
+       body {
+           font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+           line-height: 1.6;
+           color: #333;
+           margin: 0;
+           padding: 20px;
+           background-color: #f9f5f0;
+       }
+       
+       h1, h2 {
+           text-align: center;
+           color: #006D77;
+       }
+       
+       h1 {
+           margin-bottom: 5px;
+       }
+       
+       h2 {
+           margin-top: 0;
+           font-weight: normal;
+           font-size: 1.2em;
+           margin-bottom: 20px;
+           color: #83C5BE;
+       }
+       
+       .content-section {
+           max-width: 800px;
+           margin: 30px auto;
+           padding: 25px;
+           background-color: #EDF6F9;
+           border-radius: 8px;
+           box-shadow: 0 3px 6px rgba(0,0,0,0.1);
+       }
+       
+       .content-section h3 {
+           color: #006D77;
+           border-bottom: 2px solid #FFDDD2;
+           padding-bottom: 10px;
+           margin-bottom: 25px;
+       }
+       
+       .food-item {
+           margin-bottom: 30px;
+           padding-bottom: 25px;
+           border-bottom: 1px solid #FFDDD2;
+       }
+       
+       .food-item:last-child {
+           border-bottom: none;
+           margin-bottom: 0;
+       }
+       
+       .food-item h4 {
+           color: #006D77;
+           margin-bottom: 15px;
+       }
+       
+       .food-item p {
+           line-height: 1.7;
+           color: #444;
+           text-align: justify;
+       }
+       
+       .food-meta {
+           font-size: 0.85em;
+           color: #777;
+           margin-top: 15px;
+           font-style: italic;
+       }
+   </style>
+   </body>
+   </html>

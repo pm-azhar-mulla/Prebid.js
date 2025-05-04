@@ -34,79 +34,290 @@ const isIabCategoryInLocalStorage = () => {
 };
 
 /**
+ * Get text summary using Chrome AI Summarizer API
+ * @param {Object} options - Configuration options for the summarizer
+ * @returns {Promise<string|null>} - The summary text or null if summarization fails
+ */
+const getPageSummary = async (options) => {
+  try {
+    const available = (await self.ai.summarizer.capabilities()).available;
+    let summarizer;
+    
+    logMessage(`${CONSTANTS.LOG_PRE_FIX} summarizer api status:`, available);
+    console.time("summarizerApiTime");
+    
+    if (available === 'no') {
+      logMessage(`${CONSTANTS.LOG_PRE_FIX} Summarizer API isn't available`);
+      return null;
+    }
+    
+    summarizer = await self.ai.summarizer.create(options);
+    
+    if (available !== 'readily') {
+      logMessage(`${CONSTANTS.LOG_PRE_FIX} Summarizer model needs to be downloaded`);
+      summarizer.addEventListener('downloadprogress', (e) => {
+        logMessage(`${CONSTANTS.LOG_PRE_FIX} Download progress:`, e.loaded, e.total);
+      });
+      await summarizer.ready;
+    }
+    
+    const longText = document.querySelector('body').innerText;
+    const summary = await summarizer.summarize(longText, {
+      context: 'This a long html page, you need to ignore the HTML tags such as <p> <article> <div> and only get the text for summarizing',
+    });
+    
+    console.timeEnd("summarizerApiTime");
+    logMessage(`${CONSTANTS.LOG_PRE_FIX} Summary >> `, summary);
+    
+    return summary;
+  } catch (error) {
+    logError(`${CONSTANTS.LOG_PRE_FIX} Error getting page summary:`, error);
+    return null;
+  }
+};
+
+/**
+ * Store IAB categories in localStorage
+ * @param {Array} iabCategories - The IAB categories to store
+ * @param {string} url - The URL to associate with these categories
+ * @returns {boolean} - Whether the operation was successful
+ */
+const storeIabCategories = (iabCategories, url) => {
+  try {
+    if (!iabCategories || iabCategories.length === 0) {
+      logMessage(`${CONSTANTS.LOG_PRE_FIX} No valid IAB categories to store`);
+      return false;
+    }
+    
+    // Get existing categories object or create a new one
+    let categoriesObject = {};
+    const storedCategoriesJson = localStorage.getItem(CONSTANTS.STORAGE_KEY);
+    
+    if (storedCategoriesJson) {
+      categoriesObject = JSON.parse(storedCategoriesJson);
+    }
+    
+    // Store the result in the categories object
+    categoriesObject[url] = iabCategories;
+    
+    // Save the updated object back to localStorage
+    localStorage.setItem(CONSTANTS.STORAGE_KEY, JSON.stringify(categoriesObject));
+    logMessage(`${CONSTANTS.LOG_PRE_FIX} IAB Categories stored in localStorage:`, iabCategories);
+    
+    return true;
+  } catch (error) {
+    logError(`${CONSTANTS.LOG_PRE_FIX} Error storing IAB categories:`, error);
+    return false;
+  }
+};
+
+/**
+ * Detect the language of a text using Chrome AI language detection API
+ * @param {string} text - The text to detect language for
+ * @returns {Promise<string|null>} - The detected language code or null if detection fails
+ */
+const detectLanguage = async (text) => {
+  try {
+    // Check if language detection API is available
+    if (!self.ai || !self.ai.languageDetector) {
+      logError(`${CONSTANTS.LOG_PRE_FIX} Language detection API is not available`);
+      return null;
+    }
+    
+    // Check capabilities
+    const languageDetectorCapabilities = await self.ai.languageDetector.capabilities();
+    const canDetect = languageDetectorCapabilities.available;
+    
+    if (canDetect === 'no') {
+      // The language detector isn't usable
+      logError(`${CONSTANTS.LOG_PRE_FIX} Language detector is not available`);
+      return null;
+    }
+    
+    let detector;
+    if (canDetect === 'readily') {
+      // The language detector can immediately be used
+      detector = await self.ai.languageDetector.create();
+    } else {
+      // The language detector can be used after model download
+      detector = await self.ai.languageDetector.create({
+        monitor(m) {
+          m.addEventListener('downloadprogress', (e) => {
+            logMessage(`${CONSTANTS.LOG_PRE_FIX} Language detector download progress: ${e.loaded} of ${e.total} bytes`);
+          });
+        },
+      });
+      await detector.ready;
+    }
+    
+    // Detect language
+    const results = await detector.detect(text);
+    
+    if (!results || results.length === 0) {
+      logError(`${CONSTANTS.LOG_PRE_FIX} No language detection results`);
+      return null;
+    }
+    
+    const topResult = results[0];
+    logMessage(`${CONSTANTS.LOG_PRE_FIX} Detected language: ${topResult.detectedLanguage} (confidence: ${topResult.confidence})`);
+    return topResult.detectedLanguage;
+  } catch (error) {
+    logError(`${CONSTANTS.LOG_PRE_FIX} Error detecting language:`, error);
+    return null;
+  }
+};
+
+/**
+ * Translate text to English using Chrome AI translation API
+ * @param {string} text - The text to translate
+ * @param {string} sourceLanguage - The source language code
+ * @returns {Promise<string|null>} - The translated text or null if translation fails
+ */
+const translateToEnglish = async (text, sourceLanguage) => {
+  try {
+    // Check if translation API is available
+    if (!self.ai || !self.ai.translator) {
+      logError(`${CONSTANTS.LOG_PRE_FIX} Translation API is not available`);
+      return null;
+    }
+    
+    // Check capabilities
+    const translatorCapabilities = await self.ai.translator.capabilities();
+    const canTranslate = translatorCapabilities.available;
+    
+    if (canTranslate === 'no') {
+      // The translator isn't usable
+      logError(`${CONSTANTS.LOG_PRE_FIX} Translator is not available`);
+      return null;
+    }
+    
+    let translator;
+    if (canTranslate === 'readily') {
+      // The translator can immediately be used
+      translator = await self.ai.translator.create({
+        sourceLanguage: sourceLanguage,
+        targetLanguage: 'en'
+      });
+    } else {
+      // The translator can be used after model download
+      translator = await self.ai.translator.create({
+        sourceLanguage: sourceLanguage,
+        targetLanguage: 'en',
+        monitor(m) {
+          m.addEventListener('downloadprogress', (e) => {
+            logMessage(`${CONSTANTS.LOG_PRE_FIX} Translator download progress: ${e.loaded} of ${e.total} bytes`);
+          });
+        },
+      });
+      await translator.ready;
+    }
+    
+    // Translate text
+    const result = await translator.translate(text);
+    
+    if (!result) {
+      logError(`${CONSTANTS.LOG_PRE_FIX} No translation result`);
+      return null;
+    }
+    
+    logMessage(`${CONSTANTS.LOG_PRE_FIX} Translation complete`);
+    return result;
+  } catch (error) {
+    logError(`${CONSTANTS.LOG_PRE_FIX} Error translating text:`, error);
+    return null;
+  }
+};
+
+/**
+ * Process summary text: detect language and translate if needed
+ * @param {string} summary - The summary text to process
+ * @returns {Promise<string|null>} - The processed summary (translated if needed) or null if processing fails
+ */
+const processSummary = async (summary) => {
+  try {
+    // Detect language
+    const detectedLanguage = await detectLanguage(summary);
+    
+    if (!detectedLanguage) {
+      logError(`${CONSTANTS.LOG_PRE_FIX} Failed to detect language, using original summary`);
+      return summary;
+    }
+    
+    // If language is not English, translate to English
+    if (detectedLanguage.toLowerCase() !== 'en') {
+      logMessage(`${CONSTANTS.LOG_PRE_FIX} Non-English content detected (${detectedLanguage}), translating to English`);
+      const translatedSummary = await translateToEnglish(summary, detectedLanguage);
+      
+      if (!translatedSummary) {
+        logError(`${CONSTANTS.LOG_PRE_FIX} Translation failed, using original summary`);
+        return summary;
+      }
+      
+      return translatedSummary;
+    }
+    
+    // If language is English, return original summary
+    logMessage(`${CONSTANTS.LOG_PRE_FIX} English content detected, no translation needed`);
+    return summary;
+  } catch (error) {
+    logError(`${CONSTANTS.LOG_PRE_FIX} Error processing summary:`, error);
+    return summary; // Return original summary in case of error
+  }
+};
+
+/**
  * Initialize the ChromeAI RTD Module.
  * @param {Object} config
  * @param {Object} _userConsent
  * @returns {boolean}
  */
 const init = async (config, _userConsent) => {
-    logMessage("ChromeAi : config", config);
-    //logMessage("ChromeAi : _userConsent", _userConsent);
-    const options = {
-        type: 'teaser',
-        format: 'markdown',
-        length: 'short',
-      };
-      
-      // Check if IAB categories already exist in localStorage
-      const storedCategories = isIabCategoryInLocalStorage();
-      let iabCategories;
-      
-      if (!storedCategories) {
-        const available = (await self.ai.summarizer.capabilities()).available;
-        let summarizer;
-        logMessage("summarizer api status:",available);
-        console.time("summarizerApiTime");
-        if (available === 'no') {
-            // The Summarizer API isn't usable.
-            return;
-        }
-        if (available === 'readily') {
-            // The Summarizer API can be used immediately .
-            summarizer = await self.ai.summarizer.create(options);
-        } else {
-            // The Summarizer API can be used after the model is downloaded.
-            summarizer = await self.ai.summarizer.create(options);
-            logMessage("Azzi123 >> summarizer >> ", summarizer);
-            summarizer.addEventListener('downloadprogress', (e) => {
-            logMessage(e.loaded, e.total);
-            });
-            await summarizer.ready;
-        }
-        const longText = document.querySelector('body').innerHTML;
-        const summary = await summarizer.summarize(longText, {
-            context: 'This article is intended for a sports audience.',
-        });
-        console.timeEnd("summarizerApiTime");
-        logMessage("Summary >> ", summary);
-        
-        console.time("IABMappingTime");
-        // Get the existing categories object or create a new one
-        let categoriesObject = {};
-        const storedCategoriesJson = localStorage.getItem(CONSTANTS.STORAGE_KEY);
-        if (storedCategoriesJson) {
-          categoriesObject = JSON.parse(storedCategoriesJson);
-        }
-        
-        // Map the summary to IAB categories if not in localStorage
-        iabCategories = mapToIABCategories(summary);
-        console.timeEnd("IABMappingTime");
-        
-        // Only store in localStorage if we have valid IAB categories
-        if (iabCategories && iabCategories.length > 0) {
-          // Store the result in the categories object
-          categoriesObject[window.location.href] = iabCategories;
-          // Save the updated object back to localStorage
-          localStorage.setItem(CONSTANTS.STORAGE_KEY, JSON.stringify(categoriesObject));
-          logMessage("IAB Categories from mapping:", iabCategories);
-        } else {
-          logMessage("No valid IAB categories found for this page");
-        }
-      } else {
-        logMessage("IAB Categories already in localStorage, skipping mapping", storedCategories);
-      }
-    
+  logMessage(`${CONSTANTS.LOG_PRE_FIX} config:`, config);
+  
+  // Check if IAB categories already exist in localStorage
+  const storedCategories = isIabCategoryInLocalStorage();
+  
+  if (storedCategories) {
+    logMessage(`${CONSTANTS.LOG_PRE_FIX} IAB Categories already in localStorage, skipping mapping`, storedCategories);
     return true;
+  }
+  
+  // Define summarizer options
+  const options = {
+    type: 'teaser',
+    format: 'markdown',
+    length: 'long',
+  };
+  
+  // Get page summary using Chrome AI
+  const summary = await getPageSummary(options);
+  
+  if (!summary) {
+    logMessage(`${CONSTANTS.LOG_PRE_FIX} Failed to get page summary, aborting`);
+    return false;
+  }
+  
+  // Process summary: detect language and translate if needed
+  const processedSummary = await processSummary(summary);
+  
+  if (!processedSummary) {
+    logMessage(`${CONSTANTS.LOG_PRE_FIX} Failed to process summary, aborting`);
+    return false;
+  }
+  
+  // Map the processed summary to IAB categories
+  console.time("IABMappingTime");
+  const iabCategories = mapToIABCategories(processedSummary);
+  console.timeEnd("IABMappingTime");
+  
+  // Store categories in localStorage if valid
+  if (iabCategories && iabCategories.length > 0) {
+    storeIabCategories(iabCategories, window.location.href);
+  } else {
+    logMessage(`${CONSTANTS.LOG_PRE_FIX} No valid IAB categories found for this page`);
+  }
+  
+  return true;
 };
 
 /**
@@ -116,12 +327,12 @@ const init = async (config, _userConsent) => {
  * @param {Object} userConsent
  */
 const getBidRequestData = (reqBidsConfigObj, callback) => {
-    logMessage("ChromeAi : reqBidsConfigObj", reqBidsConfigObj);
+    logMessage(`${CONSTANTS.LOG_PRE_FIX} reqBidsConfigObj:`, reqBidsConfigObj);
     
     // Check if IAB categories exist in localStorage
     const storedCategories = isIabCategoryInLocalStorage();
     if (storedCategories) {
-      logMessage("Setting  IAB Categories from localStorage:", storedCategories);
+      logMessage(`${CONSTANTS.LOG_PRE_FIX} Setting IAB Categories from localStorage:`, storedCategories);
       mergeDeep(reqBidsConfigObj.ortb2Fragments.bidder, {
                     'pubmatic': {
                         site:{
@@ -130,9 +341,9 @@ const getBidRequestData = (reqBidsConfigObj, callback) => {
                     }
                 });
     } else {
-      logMessage("No IAB Categories found in localStorage for current URL");
+      logMessage(`${CONSTANTS.LOG_PRE_FIX} No IAB Categories found in localStorage for current URL`);
     }
-    logMessage("after changing ",reqBidsConfigObj);
+    logMessage(`${CONSTANTS.LOG_PRE_FIX} after changing:`, reqBidsConfigObj);
     
     callback();
 }
@@ -154,258 +365,120 @@ export const registerSubModule = () => {
 
 registerSubModule();
 
-
 const IAB_CATEGORIES = {
     "IAB1": {
       "name": "Arts & Entertainment",
-      "subcategories": {
-        "IAB1-1": "Books & Literature",
-        "IAB1-2": "Celebrity Fan/Gossip",
-        "IAB1-3": "Fine Art",
-        "IAB1-4": "Humor",
-        "IAB1-5": "Movies",
-        "IAB1-6": "Music",
-        "IAB1-7": "Television"
-      },
+      "subcategories": {"IAB1-1": "Books & Literature", "IAB1-2": "Celebrity Fan/Gossip", "IAB1-3": "Fine Art", "IAB1-4": "Humor", "IAB1-5": "Movies", "IAB1-6": "Music", "IAB1-7": "Television"},
       "keywords": ["entertainment", "art", "movie", "film", "music", "concert", "book", "novel", "celebrity", "actor", "actress", "director", "tv", "television", "show", "theater", "comedy", "drama"]
     },
     "IAB2": {
       "name": "Automotive",
-      "subcategories": {
-        "IAB2-1": "Auto Parts",
-        "IAB2-2": "Auto Repair",
-        "IAB2-3": "Buying/Selling Cars"
-      },
+      "subcategories": {"IAB2-1": "Auto Parts", "IAB2-2": "Auto Repair", "IAB2-3": "Buying/Selling Cars"},
       "keywords": ["car", "vehicle", "automotive", "auto", "truck", "suv", "repair", "parts", "dealer", "driving"]
     },
     "IAB3": {
       "name": "Business",
-      "subcategories": {
-        "IAB3-1": "Advertising",
-        "IAB3-2": "Agriculture",
-        "IAB3-3": "Biotech/Biomedical"
-      },
+      "subcategories": {"IAB3-1": "Advertising", "IAB3-2": "Agriculture", "IAB3-3": "Biotech/Biomedical"},
       "keywords": ["business", "company", "corporate", "industry", "market", "finance", "investment", "economy", "trade", "stock", "management"]
     },
     "IAB4": {
       "name": "Careers",
-      "subcategories": {
-        "IAB4-1": "Career Planning",
-        "IAB4-2": "College",
-        "IAB4-3": "Financial Aid"
-      },
+      "subcategories": {"IAB4-1": "Career Planning", "IAB4-2": "College", "IAB4-3": "Financial Aid"},
       "keywords": ["job", "career", "employment", "hiring", "resume", "interview", "salary", "profession", "work"]
     },
     "IAB5": {
       "name": "Education",
-      "subcategories": {
-        "IAB5-1": "7-12 Education",
-        "IAB5-2": "Adult Education",
-        "IAB5-3": "Art History"
-      },
+      "subcategories": {"IAB5-1": "7-12 Education", "IAB5-2": "Adult Education", "IAB5-3": "Art History"},
       "keywords": ["education", "school", "university", "college", "degree", "academic", "learning", "student", "teacher", "professor", "course", "class"]
     },
     "IAB6": {
       "name": "Family & Parenting",
-      "subcategories": {
-        "IAB6-1": "Adoption",
-        "IAB6-2": "Babies & Toddlers",
-        "IAB6-3": "Daycare/Pre School"
-      },
+      "subcategories": {"IAB6-1": "Adoption", "IAB6-2": "Babies & Toddlers", "IAB6-3": "Daycare/Pre School"},
       "keywords": ["family", "parent", "child", "baby", "kid", "mother", "father", "pregnancy", "toddler", "parenting"]
     },
     "IAB7": {
       "name": "Health & Fitness",
-      "subcategories": {
-        "IAB7-1": "Exercise",
-        "IAB7-2": "A.D.D.",
-        "IAB7-3": "AIDS/HIV"
-      },
+      "subcategories": {"IAB7-1": "Exercise", "IAB7-2": "A.D.D.", "IAB7-3": "AIDS/HIV"},
       "keywords": ["health", "fitness", "exercise", "workout", "diet", "nutrition", "medical", "disease", "doctor", "hospital", "medicine", "wellness"]
     },
     "IAB8": {
       "name": "Food & Drink",
-      "subcategories": {
-        "IAB8-1": "American Cuisine",
-        "IAB8-2": "Barbecues & Grilling",
-        "IAB8-3": "Cajun/Creole"
-      },
+      "subcategories": {"IAB8-1": "American Cuisine", "IAB8-2": "Barbecues & Grilling", "IAB8-3": "Cajun/Creole"},
       "keywords": ["food", "drink", "recipe", "cooking", "cuisine", "restaurant", "chef", "meal", "dinner", "lunch", "breakfast", "baking", "grill"]
     },
     "IAB9": {
       "name": "Hobbies & Interests",
-      "subcategories": {
-        "IAB9-1": "Art/Technology",
-        "IAB9-2": "Arts & Crafts",
-        "IAB9-3": "Beadwork"
-      },
+      "subcategories": {"IAB9-1": "Art/Technology", "IAB9-2": "Arts & Crafts", "IAB9-3": "Beadwork"},
       "keywords": ["hobby", "craft", "collection", "diy", "gardening", "photography", "sewing", "knitting", "woodworking", "interest"]
     },
     "IAB10": {
       "name": "Home & Garden",
-      "subcategories": {
-        "IAB10-1": "Appliances",
-        "IAB10-2": "Entertaining",
-        "IAB10-3": "Environmental Safety"
-      },
+      "subcategories": {"IAB10-1": "Appliances", "IAB10-2": "Entertaining", "IAB10-3": "Environmental Safety"},
       "keywords": ["home", "house", "garden", "furniture", "decor", "interior", "design", "decoration", "gardening", "landscaping", "lawn", "appliance"]
     },
     "IAB11": {
       "name": "Law, Gov't & Politics",
-      "subcategories": {
-        "IAB11-1": "Immigration",
-        "IAB11-2": "Legal Issues",
-        "IAB11-3": "Government"
-      },
+      "subcategories": {"IAB11-1": "Immigration", "IAB11-2": "Legal Issues", "IAB11-3": "Government"},
       "keywords": ["law", "legal", "government", "politics", "policy", "election", "vote", "political", "president", "congress", "court", "legislation"]
     },
     "IAB12": {
       "name": "News",
-      "subcategories": {
-        "IAB12-1": "International News",
-        "IAB12-2": "National News",
-        "IAB12-3": "Local News"
-      },
+      "subcategories": {"IAB12-1": "International News", "IAB12-2": "National News", "IAB12-3": "Local News"},
       "keywords": ["news", "headline", "report", "journalist", "media", "press", "breaking", "current events", "update"]
     },
     "IAB13": {
       "name": "Personal Finance",
-      "subcategories": {
-        "IAB13-1": "Beginning Investing",
-        "IAB13-2": "Credit/Debt & Loans",
-        "IAB13-3": "Financial News"
-      },
+      "subcategories": {"IAB13-1": "Beginning Investing", "IAB13-2": "Credit/Debt & Loans", "IAB13-3": "Financial News"},
       "keywords": ["finance", "money", "invest", "loan", "credit", "debt", "mortgage", "banking", "budget", "saving", "retirement"]
     },
     "IAB14": {
       "name": "Society",
-      "subcategories": {
-        "IAB14-1": "Dating",
-        "IAB14-2": "Divorce Support",
-        "IAB14-3": "Gay Life"
-      },
+      "subcategories": {"IAB14-1": "Dating", "IAB14-2": "Divorce Support", "IAB14-3": "Gay Life"},
       "keywords": ["society", "culture", "community", "relationship", "dating", "wedding", "marriage", "divorce", "social"]
     },
     "IAB15": {
       "name": "Science",
-      "subcategories": {
-        "IAB15-1": "Astrology",
-        "IAB15-2": "Biology",
-        "IAB15-3": "Chemistry"
-      },
+      "subcategories": {"IAB15-1": "Astrology", "IAB15-2": "Biology", "IAB15-3": "Chemistry"},
       "keywords": ["science", "research", "scientific", "biology", "chemistry", "physics", "astronomy", "technology", "experiment", "discovery"]
     },
     "IAB16": {
       "name": "Pets",
-      "subcategories": {
-        "IAB16-1": "Aquariums",
-        "IAB16-2": "Birds",
-        "IAB16-3": "Cats"
-      },
+      "subcategories": {"IAB16-1": "Aquariums", "IAB16-2": "Birds", "IAB16-3": "Cats"},
       "keywords": ["pet", "dog", "cat", "animal", "veterinarian", "breed", "fish", "bird", "reptile", "hamster"]
     },
     "IAB17": {
       "name": "Sports",
-      "subcategories": {
-        "IAB17-1": "Auto Racing",
-        "IAB17-2": "Baseball",
-        "IAB17-3": "Bicycling",
-        "IAB17-4": "Bodybuilding",
-        "IAB17-5": "Boxing",
-        "IAB17-6": "Canoeing/Kayaking",
-        "IAB17-7": "Cheerleading",
-        "IAB17-8": "Climbing",
-        "IAB17-9": "Cricket",
-        "IAB17-10": "Figure Skating",
-        "IAB17-11": "Fly Fishing",
-        "IAB17-12": "Football",
-        "IAB17-13": "Freshwater Fishing",
-        "IAB17-14": "Game & Fish",
-        "IAB17-15": "Golf",
-        "IAB17-16": "Horse Racing",
-        "IAB17-17": "Horses",
-        "IAB17-18": "Hunting/Shooting",
-        "IAB17-19": "Inline Skating",
-        "IAB17-20": "Martial Arts",
-        "IAB17-21": "Mountain Biking",
-        "IAB17-22": "NASCAR Racing",
-        "IAB17-23": "Olympics",
-        "IAB17-24": "Paintball",
-        "IAB17-25": "Power & Motorcycles",
-        "IAB17-26": "Pro Basketball",
-        "IAB17-27": "Pro Ice Hockey",
-        "IAB17-28": "Rodeo",
-        "IAB17-29": "Rugby",
-        "IAB17-30": "Running/Jogging",
-        "IAB17-31": "Sailing",
-        "IAB17-32": "Saltwater Fishing",
-        "IAB17-33": "Scuba Diving",
-        "IAB17-34": "Skateboarding",
-        "IAB17-35": "Skiing",
-        "IAB17-36": "Snowboarding",
-        "IAB17-37": "Surfing/Bodyboarding",
-        "IAB17-38": "Swimming",
-        "IAB17-39": "Table Tennis/Ping-Pong",
-        "IAB17-40": "Tennis",
-        "IAB17-41": "Volleyball",
-        "IAB17-42": "Walking",
-        "IAB17-43": "Waterski/Wakeboard",
-        "IAB17-44": "World Soccer"
-      },
+      "subcategories": {"IAB17-1": "Auto Racing", "IAB17-2": "Baseball", "IAB17-3": "Bicycling", "IAB17-4": "Bodybuilding", "IAB17-5": "Boxing", "IAB17-6": "Canoeing/Kayaking", "IAB17-7": "Cheerleading", "IAB17-8": "Climbing", "IAB17-9": "Cricket", "IAB17-10": "Figure Skating", "IAB17-11": "Fly Fishing", "IAB17-12": "Football", "IAB17-13": "Freshwater Fishing", "IAB17-14": "Game & Fish", "IAB17-15": "Golf", "IAB17-16": "Horse Racing", "IAB17-17": "Horses", "IAB17-18": "Hunting/Shooting", "IAB17-19": "Inline Skating", "IAB17-20": "Martial Arts", "IAB17-21": "Mountain Biking", "IAB17-22": "NASCAR Racing", "IAB17-23": "Olympics", "IAB17-24": "Paintball", "IAB17-25": "Power & Motorcycles", "IAB17-26": "Pro Basketball", "IAB17-27": "Pro Ice Hockey", "IAB17-28": "Rodeo", "IAB17-29": "Rugby", "IAB17-30": "Running/Jogging", "IAB17-31": "Sailing", "IAB17-32": "Saltwater Fishing", "IAB17-33": "Scuba Diving", "IAB17-34": "Skateboarding", "IAB17-35": "Skiing", "IAB17-36": "Snowboarding", "IAB17-37": "Surfing/Bodyboarding", "IAB17-38": "Swimming", "IAB17-39": "Table Tennis/Ping-Pong", "IAB17-40": "Tennis", "IAB17-41": "Volleyball", "IAB17-42": "Walking", "IAB17-43": "Waterski/Wakeboard", "IAB17-44": "World Soccer"},
       "keywords": ["sport", "game", "team", "player", "athlete", "championship", "tournament", "match", "competition", "league", "score", "win", "coach", "stadium", "cricket", "baseball", "football", "soccer", "basketball", "tennis", "golf", "hockey", "rugby", "boxing", "racing", "swimming", "cycling", "olympics", "fitness", "workout", "exercise", "run", "race", "ball", "bat", "wicket", "bowl", "pitch", "field", "court", "track"]
     },
     "IAB18": {
       "name": "Style & Fashion",
-      "subcategories": {
-        "IAB18-1": "Beauty",
-        "IAB18-2": "Body Art",
-        "IAB18-3": "Fashion"
-      },
+      "subcategories": {"IAB18-1": "Beauty", "IAB18-2": "Body Art", "IAB18-3": "Fashion"},
       "keywords": ["fashion", "style", "clothing", "dress", "beauty", "accessory", "jewelry", "cosmetic", "makeup", "hair", "model", "designer"]
     },
     "IAB19": {
       "name": "Technology & Computing",
-      "subcategories": {
-        "IAB19-1": "3-D Graphics",
-        "IAB19-2": "Animation",
-        "IAB19-3": "Antivirus Software"
-      },
+      "subcategories": {"IAB19-1": "3-D Graphics", "IAB19-2": "Animation", "IAB19-3": "Antivirus Software"},
       "keywords": ["technology", "computer", "software", "hardware", "internet", "digital", "app", "programming", "code", "device", "gadget", "electronics", "mobile", "phone", "laptop", "tablet"]
     },
     "IAB20": {
       "name": "Travel",
-      "subcategories": {
-        "IAB20-1": "Adventure Travel",
-        "IAB20-2": "Africa",
-        "IAB20-3": "Air Travel"
-      },
+      "subcategories": {"IAB20-1": "Adventure Travel", "IAB20-2": "Africa", "IAB20-3": "Air Travel"},
       "keywords": ["travel", "vacation", "tourism", "tourist", "destination", "hotel", "resort", "flight", "airline", "cruise", "beach", "mountain", "trip", "journey", "tour"]
     },
     "IAB21": {
       "name": "Real Estate",
-      "subcategories": {
-        "IAB21-1": "Apartments",
-        "IAB21-2": "Architects",
-        "IAB21-3": "Buying/Selling Homes"
-      },
+      "subcategories": {"IAB21-1": "Apartments", "IAB21-2": "Architects", "IAB21-3": "Buying/Selling Homes"},
       "keywords": ["real estate", "property", "home", "house", "apartment", "condo", "rent", "buy", "sell", "mortgage", "realtor", "broker", "listing"]
     },
     "IAB22": {
       "name": "Shopping",
-      "subcategories": {
-        "IAB22-1": "Contests & Freebies",
-        "IAB22-2": "Couponing",
-        "IAB22-3": "Comparison"
-      },
+      "subcategories": {"IAB22-1": "Contests & Freebies", "IAB22-2": "Couponing", "IAB22-3": "Comparison"},
       "keywords": ["shopping", "store", "retail", "mall", "shop", "buy", "purchase", "product", "price", "discount", "sale", "deal", "coupon"]
     },
     "IAB23": {
       "name": "Religion & Spirituality",
-      "subcategories": {
-        "IAB23-1": "Alternative Religions",
-        "IAB23-2": "Atheism/Agnosticism",
-        "IAB23-3": "Buddhism"
-      },
+      "subcategories": {"IAB23-1": "Alternative Religions", "IAB23-2": "Atheism/Agnosticism", "IAB23-3": "Buddhism"},
       "keywords": ["religion", "spiritual", "faith", "god", "church", "prayer", "worship", "belief", "religious", "christian", "muslim", "islam", "hindu", "buddhist", "jewish"]
     }
   };
