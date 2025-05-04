@@ -8,7 +8,8 @@ const CONSTANTS = Object.freeze({
   SUBMODULE_NAME: 'chromeAi',
   REAL_TIME_MODULE: 'realTimeData',
   LOG_PRE_FIX: 'ChromeAI-Rtd-Provider: ',
-  STORAGE_KEY: 'chromeAi_iabCategories'
+  STORAGE_KEY: 'chromeAi_iabCategories',
+  SENTIMENT_STORAGE_KEY: 'chromeAi_sentiment'
 });
 
 /**
@@ -266,6 +267,175 @@ const processSummary = async (summary) => {
 };
 
 /**
+ * Check if sentiment analysis exists in localStorage for the current URL
+ * @returns {Object|null} The sentiment analysis if found, null otherwise
+ */
+const isSentimentInLocalStorage = () => {
+  const currentUrl = window.location.href;
+  const storedSentimentJson = localStorage.getItem(CONSTANTS.SENTIMENT_STORAGE_KEY);
+  
+  if (storedSentimentJson) {
+    try {
+      const sentimentObject = JSON.parse(storedSentimentJson);
+      if (sentimentObject[currentUrl]) {
+        return sentimentObject[currentUrl];
+      }
+    } catch (e) {
+      logError(`${CONSTANTS.LOG_PRE_FIX} Error parsing sentiment from localStorage:`, e);
+    }
+  }
+  
+  return null;
+};
+
+/**
+ * Store sentiment analysis in localStorage
+ * @param {Object} sentiment - The sentiment analysis to store
+ * @param {string} url - The URL to associate with this sentiment
+ * @returns {boolean} - Whether the operation was successful
+ */
+const storeSentiment = (sentiment, url) => {
+  try {
+    // Get existing sentiment data or create new object
+    const existingDataJson = localStorage.getItem(CONSTANTS.SENTIMENT_STORAGE_KEY);
+    let sentimentObject = {};
+    
+    if (existingDataJson) {
+      try {
+        sentimentObject = JSON.parse(existingDataJson);
+      } catch (e) {
+        logError(`${CONSTANTS.LOG_PRE_FIX} Error parsing existing sentiment data:`, e);
+      }
+    }
+    
+    // Add new sentiment data for this URL
+    sentimentObject[url] = sentiment;
+    
+    // Store updated data
+    localStorage.setItem(CONSTANTS.SENTIMENT_STORAGE_KEY, JSON.stringify(sentimentObject));
+    logMessage(`${CONSTANTS.LOG_PRE_FIX} Sentiment stored for URL:`, url);
+    
+    return true;
+  } catch (e) {
+    logError(`${CONSTANTS.LOG_PRE_FIX} Error storing sentiment:`, e);
+    return false;
+  }
+};
+
+/**
+ * Perform sentiment analysis using Chrome AI Prompt API
+ * @param {string} text - The text to analyze
+ * @returns {Promise<Object|null>} - The sentiment analysis result or null if analysis fails
+ */
+const analyzeSentiment = async (text) => {
+  console.log("Azzi>> tect as input >> ", text);
+  try {
+    // Check if the Prompt API is available
+    if (!self.ai || !self.ai.languageModel) {
+      logMessage(`${CONSTANTS.LOG_PRE_FIX} Chrome AI Prompt API is not available`);
+      return null;
+    }
+    
+    // Check capabilities
+    const capabilities = await self.ai.languageModel.capabilities();
+    if (capabilities.available === 'no') {
+      logMessage(`${CONSTANTS.LOG_PRE_FIX} Chrome AI Prompt API isn't available`);
+      return null;
+    }
+    
+    logMessage(`${CONSTANTS.LOG_PRE_FIX} Chrome AI Prompt API status:`, capabilities.available);
+    console.time("sentimentAnalysisTime");
+    
+    // Create prompt for sentiment analysis
+    const prompt = `
+      Analyze the sentiment of the following text. Determine if it is positive, negative, or neutral.
+      Also identify the main emotions expressed (like joy, anger, sadness, fear, surprise, etc.) and the overall tone.
+      
+      Text to analyze:
+      "${text}"
+      
+      Format your response as a JSON object with the following structure:
+      {
+        "sentiment": "positive|negative|neutral",
+        "confidence": [number between 0-1],
+        "emotions": ["emotion1", "emotion2"],
+        "tone": "formal|informal|technical|casual|etc",
+        "intensity": "low|medium|high"
+      }
+    `;
+    
+    // Initialize the prompt API
+    let promptApi;
+    if (capabilities.available === 'readily') {
+      promptApi = await self.ai.languageModel.create({
+        systemPrompt: prompt,
+      });
+    } else {
+      promptApi = await self.ai.languageModel.create({
+        systemPrompt: prompt,
+      });
+      
+      // Monitor download progress if needed
+      promptApi.addEventListener('downloadprogress', (e) => {
+        logMessage(`${CONSTANTS.LOG_PRE_FIX} Prompt API download progress:`, e.loaded, 'of', e.total);
+      });
+      
+      await promptApi.ready;
+    }
+    
+    // Generate the response
+    console.log("Azzi prompt>>", promptApi);
+    const response = await promptApi.prompt('What is the sentiment analyisis for this page? give me answer in json format as specified in system prompt');
+    console.log("response>>",response);
+    console.timeEnd("sentimentAnalysisTime");
+    
+    // Parse the JSON response
+    try {
+      // Look for JSON in the response
+      const jsonMatch = response.match(/\{[\s\S]*\}/);
+      if (jsonMatch) {
+        const sentimentData = JSON.parse(jsonMatch[0]);
+        logMessage(`${CONSTANTS.LOG_PRE_FIX} Sentiment analysis result:`, sentimentData);
+        return sentimentData;
+      } else {
+        logError(`${CONSTANTS.LOG_PRE_FIX} No valid JSON found in prompt response`);
+        return null;
+      }
+    } catch (e) {
+      logError(`${CONSTANTS.LOG_PRE_FIX} Error parsing sentiment analysis result:`, e);
+      return null;
+    }
+  } catch (e) {
+    logError(`${CONSTANTS.LOG_PRE_FIX} Error during sentiment analysis:`, e);
+    console.timeEnd("sentimentAnalysisTime");
+    return null;
+  }
+};
+
+/**
+ * Get page content for analysis
+ * @returns {string} - The page content
+ */
+const getPageContent = () => {
+  // Get the main content of the page
+  // First try to find the main content element
+  const mainContent = document.querySelector('body');
+  
+  if (mainContent) {
+    return mainContent.innerText;
+  }
+  
+  // If no main content element is found, get all paragraph text
+  const paragraphs = document.querySelectorAll('p');
+  if (paragraphs.length > 0) {
+    return Array.from(paragraphs).map(p => p.innerText).join(' ');
+  }
+  
+  // Fallback to body text
+  return document.body.innerText;
+};
+
+/**
  * Initialize the ChromeAI RTD Module.
  * @param {Object} config
  * @param {Object} _userConsent
@@ -274,48 +444,78 @@ const processSummary = async (summary) => {
 const init = async (config, _userConsent) => {
   logMessage(`${CONSTANTS.LOG_PRE_FIX} config:`, config);
   
+  // Initialize results object to store all analyses
+  const results = {};
+  
   // Check if IAB categories already exist in localStorage
   const storedCategories = isIabCategoryInLocalStorage();
   
   if (storedCategories) {
-    logMessage(`${CONSTANTS.LOG_PRE_FIX} IAB Categories already in localStorage, skipping mapping`, storedCategories);
-    return true;
-  }
-  
-  // Define summarizer options
-  const options = {
-    type: 'teaser',
-    format: 'markdown',
-    length: 'long',
-  };
-  
-  // Get page summary using Chrome AI
-  const summary = await getPageSummary(options);
-  
-  if (!summary) {
-    logMessage(`${CONSTANTS.LOG_PRE_FIX} Failed to get page summary, aborting`);
-    return false;
-  }
-  
-  // Process summary: detect language and translate if needed
-  const processedSummary = await processSummary(summary);
-  
-  if (!processedSummary) {
-    logMessage(`${CONSTANTS.LOG_PRE_FIX} Failed to process summary, aborting`);
-    return false;
-  }
-  
-  // Map the processed summary to IAB categories
-  console.time("IABMappingTime");
-  const iabCategories = mapToIABCategories(processedSummary);
-  console.timeEnd("IABMappingTime");
-  
-  // Store categories in localStorage if valid
-  if (iabCategories && iabCategories.length > 0) {
-    storeIabCategories(iabCategories, window.location.href);
+    logMessage(`${CONSTANTS.LOG_PRE_FIX} IAB Categories already in localStorage, using cached data`, storedCategories);
+    results.iabCategories = storedCategories;
   } else {
-    logMessage(`${CONSTANTS.LOG_PRE_FIX} No valid IAB categories found for this page`);
+    // Define summarizer options
+    const options = {
+      type: 'teaser',
+      format: 'markdown',
+      length: 'long',
+    };
+    
+    // Get page summary using Chrome AI
+    const summary = await getPageSummary(options);
+    
+    if (summary) {
+      // Process summary: detect language and translate if needed
+      const processedSummary = await processSummary(summary);
+      
+      if (processedSummary) {
+        // Map the processed summary to IAB categories
+        console.time("IABMappingTime");
+        const iabCategories = mapToIABCategories(processedSummary);
+        console.timeEnd("IABMappingTime");
+        
+        // Store categories in localStorage if valid
+        if (iabCategories && iabCategories.length > 0) {
+          storeIabCategories(iabCategories, window.location.href);
+          results.iabCategories = iabCategories;
+        } else {
+          logMessage(`${CONSTANTS.LOG_PRE_FIX} No valid IAB categories found for this page`);
+        }
+      } else {
+        logMessage(`${CONSTANTS.LOG_PRE_FIX} Failed to process summary`);
+      }
+    } else {
+      logMessage(`${CONSTANTS.LOG_PRE_FIX} Failed to get page summary`);
+    }
   }
+  
+  // Check if sentiment analysis already exists in localStorage
+  const storedSentiment = isSentimentInLocalStorage();
+  
+  if (storedSentiment) {
+    logMessage(`${CONSTANTS.LOG_PRE_FIX} Sentiment analysis already in localStorage, using cached data`, storedSentiment);
+    results.sentiment = storedSentiment;
+  } else {
+    // Get page content for sentiment analysis
+    const pageContent = getPageContent();
+    
+    // Truncate content if it's too long (Prompt API may have limits)
+    const truncatedContent = pageContent.length > 5000 ? pageContent.substring(0, 5000) + '...' : pageContent;
+    
+    // Perform sentiment analysis
+    const sentimentResult = await analyzeSentiment(truncatedContent);
+    
+    if (sentimentResult) {
+      // Store sentiment in localStorage
+      storeSentiment(sentimentResult, window.location.href);
+      results.sentiment = sentimentResult;
+    } else {
+      logMessage(`${CONSTANTS.LOG_PRE_FIX} Failed to perform sentiment analysis`);
+    }
+  }
+  
+  // Store the combined results for use in bid requests
+  window.chromeAiRtdData = results;
   
   return true;
 };
@@ -326,27 +526,30 @@ const init = async (config, _userConsent) => {
  * @param {Object} config
  * @param {Object} userConsent
  */
-const getBidRequestData = (reqBidsConfigObj, callback) => {
-    logMessage(`${CONSTANTS.LOG_PRE_FIX} reqBidsConfigObj:`, reqBidsConfigObj);
-    
-    // Check if IAB categories exist in localStorage
-    const storedCategories = isIabCategoryInLocalStorage();
-    if (storedCategories) {
-      logMessage(`${CONSTANTS.LOG_PRE_FIX} Setting IAB Categories from localStorage:`, storedCategories);
-      mergeDeep(reqBidsConfigObj.ortb2Fragments.bidder, {
-                    'pubmatic': {
-                        site:{
-                            ext: storedCategories
-                        }
-                    }
-                });
-    } else {
-      logMessage(`${CONSTANTS.LOG_PRE_FIX} No IAB Categories found in localStorage for current URL`);
-    }
-    logMessage(`${CONSTANTS.LOG_PRE_FIX} after changing:`, reqBidsConfigObj);
-    
+const getBidRequestData = (reqBidsConfigObj, callback, config, userConsent) => {
+  // Get the stored RTD data
+  const rtdData = window.chromeAiRtdData || {};
+  
+  if (Object.keys(rtdData).length === 0) {
+    logMessage(`${CONSTANTS.LOG_PRE_FIX} No RTD data available`);
     callback();
-}
+    return;
+  }
+  
+  // Add RTD data to bid request
+  mergeDeep(reqBidsConfigObj.ortb2Fragments.global, {
+    site: {
+      ext: {
+        data: {
+          chromeAi: rtdData
+        }
+      }
+    }
+  });
+  
+  logMessage(`${CONSTANTS.LOG_PRE_FIX} Added RTD data to bid request:`, rtdData);
+  callback();
+};
 
 /** @type {RtdSubmodule} */
 export const chromeAiSubmodule = {
