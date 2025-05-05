@@ -40,23 +40,23 @@ const isIabCategoryInLocalStorage = () => {
  */
 const getPageSummary = async (options) => {
   try {
-    const available = (await self.ai.summarizer.capabilities()).available;
+    const availability = await Summarizer.availability();
     let summarizer;
-    
-    logMessage(`${CONSTANTS.LOG_PRE_FIX} summarizer api status:`, available);
+    logMessage(`${CONSTANTS.LOG_PRE_FIX} summarizer api status:`, availability);
     console.time("summarizerApiTime");
-    
-    if (available === 'no') {
+
+    if (availability === 'unavailable') {
       logMessage(`${CONSTANTS.LOG_PRE_FIX} Summarizer API isn't available`);
       return null;
     }
-    
-    summarizer = await self.ai.summarizer.create(options);
-    
-    if (available !== 'readily') {
-      logMessage(`${CONSTANTS.LOG_PRE_FIX} Summarizer model needs to be downloaded`);
+    if (availability === 'available') {
+      // The Summarizer API can be used immediately .
+      summarizer = await Summarizer.create(options);
+    } else {
+      // The Summarizer API can be used after the model is downloaded.
+      summarizer = await Summarizer.create(options);
       summarizer.addEventListener('downloadprogress', (e) => {
-        logMessage(`${CONSTANTS.LOG_PRE_FIX} Download progress:`, e.loaded, e.total);
+        console.log(`${CONSTANTS.LOG_PRE_FIX} Download progress:`, e.loaded, e.total);
       });
       await summarizer.ready;
     }
@@ -119,28 +119,28 @@ const storeIabCategories = (iabCategories, url) => {
 const detectLanguage = async (text) => {
   try {
     // Check if language detection API is available
-    if (!self.ai || !self.ai.languageDetector) {
+    if (!LanguageDetector) {
       logError(`${CONSTANTS.LOG_PRE_FIX} Language detection API is not available`);
       return null;
     }
     
     // Check capabilities
-    const languageDetectorCapabilities = await self.ai.languageDetector.capabilities();
-    const canDetect = languageDetectorCapabilities.available;
+    const languageDetectorAvailability = await LanguageDetector.availability();
+    //const canDetect = languageDetectorAvailability.available;
     
-    if (canDetect === 'no') {
+    if (languageDetectorAvailability === 'unavailable') {
       // The language detector isn't usable
       logError(`${CONSTANTS.LOG_PRE_FIX} Language detector is not available`);
       return null;
     }
     
     let detector;
-    if (canDetect === 'readily') {
+    if (languageDetectorAvailability === 'available') {
       // The language detector can immediately be used
-      detector = await self.ai.languageDetector.create();
+      detector = await LanguageDetector.create();
     } else {
       // The language detector can be used after model download
-      detector = await self.ai.languageDetector.create({
+      detector = await LanguageDetector.create({
         monitor(m) {
           m.addEventListener('downloadprogress', (e) => {
             logMessage(`${CONSTANTS.LOG_PRE_FIX} Language detector download progress: ${e.loaded} of ${e.total} bytes`);
@@ -176,31 +176,31 @@ const detectLanguage = async (text) => {
 const translateToEnglish = async (text, sourceLanguage) => {
   try {
     // Check if translation API is available
-    if (!self.ai || !self.ai.translator) {
+    if (!Translator) {
       logError(`${CONSTANTS.LOG_PRE_FIX} Translation API is not available`);
       return null;
     }
     
     // Check capabilities
-    const translatorCapabilities = await self.ai.translator.capabilities();
-    const canTranslate = translatorCapabilities.available;
+    const translatorAvailability = await Translator.availability();
+    //const canTranslate = translatorAvailability.available;
     
-    if (canTranslate === 'no') {
+    if (translatorAvailability === 'unavailable') {
       // The translator isn't usable
       logError(`${CONSTANTS.LOG_PRE_FIX} Translator is not available`);
       return null;
     }
     
     let translator;
-    if (canTranslate === 'readily') {
+    if (translatorAvailability === 'available') {
       // The translator can immediately be used
-      translator = await self.ai.translator.create({
+      translator = await Translator.create({
         sourceLanguage: sourceLanguage,
         targetLanguage: 'en'
       });
     } else {
       // The translator can be used after model download
-      translator = await self.ai.translator.create({
+      translator = await Translator.create({
         sourceLanguage: sourceLanguage,
         targetLanguage: 'en',
         monitor(m) {
