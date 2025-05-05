@@ -8,7 +8,8 @@ const CONSTANTS = Object.freeze({
   SUBMODULE_NAME: 'chromeAi',
   REAL_TIME_MODULE: 'realTimeData',
   LOG_PRE_FIX: 'ChromeAI-Rtd-Provider: ',
-  STORAGE_KEY: 'chromeAi_iabCategories'
+  STORAGE_KEY: 'chromeAi_iabCategories',
+  SENTIMENT_STORAGE_KEY: 'chromeAi_sentiment'
 });
 
 /**
@@ -266,6 +267,175 @@ const processSummary = async (summary) => {
 };
 
 /**
+ * Check if sentiment analysis exists in localStorage for the current URL
+ * @returns {Object|null} The sentiment analysis if found, null otherwise
+ */
+const isSentimentInLocalStorage = () => {
+  const currentUrl = window.location.href;
+  const storedSentimentJson = localStorage.getItem(CONSTANTS.SENTIMENT_STORAGE_KEY);
+  
+  if (storedSentimentJson) {
+    try {
+      const sentimentObject = JSON.parse(storedSentimentJson);
+      if (sentimentObject[currentUrl]) {
+        return sentimentObject[currentUrl];
+      }
+    } catch (e) {
+      logError(`${CONSTANTS.LOG_PRE_FIX} Error parsing sentiment from localStorage:`, e);
+    }
+  }
+  
+  return null;
+};
+
+/**
+ * Store sentiment analysis in localStorage
+ * @param {Object} sentiment - The sentiment analysis to store
+ * @param {string} url - The URL to associate with this sentiment
+ * @returns {boolean} - Whether the operation was successful
+ */
+const storeSentiment = (sentiment, url) => {
+  try {
+    // Get existing sentiment data or create new object
+    const existingDataJson = localStorage.getItem(CONSTANTS.SENTIMENT_STORAGE_KEY);
+    let sentimentObject = {};
+    
+    if (existingDataJson) {
+      try {
+        sentimentObject = JSON.parse(existingDataJson);
+      } catch (e) {
+        logError(`${CONSTANTS.LOG_PRE_FIX} Error parsing existing sentiment data:`, e);
+      }
+    }
+    
+    // Add new sentiment data for this URL
+    sentimentObject[url] = sentiment;
+    
+    // Store updated data
+    localStorage.setItem(CONSTANTS.SENTIMENT_STORAGE_KEY, JSON.stringify(sentimentObject));
+    logMessage(`${CONSTANTS.LOG_PRE_FIX} Sentiment stored for URL:`, url);
+    
+    return true;
+  } catch (e) {
+    logError(`${CONSTANTS.LOG_PRE_FIX} Error storing sentiment:`, e);
+    return false;
+  }
+};
+
+/**
+ * Perform sentiment analysis using Chrome AI Prompt API
+ * @param {string} text - The text to analyze
+ * @returns {Promise<Object|null>} - The sentiment analysis result or null if analysis fails
+ */
+const analyzeSentiment = async (text) => {
+  console.log("Azzi>> tect as input >> ", text);
+  try {
+    // Check if the Prompt API is available
+    if (!LanguageModel) {
+      logMessage(`${CONSTANTS.LOG_PRE_FIX} Chrome AI Prompt API is not available`);
+      return null;
+    }
+    
+    // Check capabilities
+    const availability = await LanguageModel.availability();
+    if (availability === 'unavailable') {
+      logMessage(`${CONSTANTS.LOG_PRE_FIX} Chrome AI Prompt API isn't available`);
+      return null;
+    }
+    
+    logMessage(`${CONSTANTS.LOG_PRE_FIX} Chrome AI Prompt API status:`, availability);
+    console.time("sentimentAnalysisTime");
+    
+    // Create prompt for sentiment analysis
+    const prompt = `
+      Analyze the sentiment of the following text. Determine if it is positive, negative, or neutral.
+      Also identify the main emotions expressed (like joy, anger, sadness, fear, surprise, etc.) and the overall tone.
+      
+      Text to analyze:
+      "${text}"
+      
+      Format your response as a JSON object with the following structure:
+      {
+        "sentiment": "positive|negative|neutral",
+        "confidence": [number between 0-1],
+        "emotions": ["emotion1", "emotion2"],
+        "tone": "formal|informal|technical|casual|etc",
+        "intensity": "low|medium|high"
+      }
+    `;
+    
+    // Initialize the prompt API
+    let promptApi;
+    if (availability === 'available') {
+      promptApi = await LanguageModel.create({
+        systemPrompt: prompt,
+      });
+    } else {
+      promptApi = await LanguageModel.create({
+        systemPrompt: prompt,
+      });
+      
+      // Monitor download progress if needed
+      promptApi.addEventListener('downloadprogress', (e) => {
+        logMessage(`${CONSTANTS.LOG_PRE_FIX} Prompt API download progress:`, e.loaded, 'of', e.total);
+      });
+      
+      await promptApi.ready;
+    }
+    
+    // Generate the response
+    console.log("Azzi prompt>>", promptApi);
+    const response = await promptApi.prompt('What is the sentiment analyisis for this page? give me answer in json format as specified in system prompt');
+    console.log("response>>",response);
+    console.timeEnd("sentimentAnalysisTime");
+    
+    // Parse the JSON response
+    try {
+      // Look for JSON in the response
+      const jsonMatch = response.match(/\{[\s\S]*\}/);
+      if (jsonMatch) {
+        const sentimentData = JSON.parse(jsonMatch[0]);
+        logMessage(`${CONSTANTS.LOG_PRE_FIX} Sentiment analysis result:`, sentimentData);
+        return sentimentData;
+      } else {
+        logError(`${CONSTANTS.LOG_PRE_FIX} No valid JSON found in prompt response`);
+        return null;
+      }
+    } catch (e) {
+      logError(`${CONSTANTS.LOG_PRE_FIX} Error parsing sentiment analysis result:`, e);
+      return null;
+    }
+  } catch (e) {
+    logError(`${CONSTANTS.LOG_PRE_FIX} Error during sentiment analysis:`, e);
+    console.timeEnd("sentimentAnalysisTime");
+    return null;
+  }
+};
+
+/**
+ * Get page content for analysis
+ * @returns {string} - The page content
+ */
+const getPageContent = () => {
+  // Get the main content of the page
+  // First try to find the main content element
+  const mainContent = document.querySelector('body');
+  
+  if (mainContent) {
+    return mainContent.innerText;
+  }
+  
+  // If no main content element is found, get all paragraph text
+  const paragraphs = document.querySelectorAll('p');
+  if (paragraphs.length > 0) {
+    return Array.from(paragraphs).map(p => p.innerText).join(' ');
+  }
+  
+  // Fallback to body text
+  return document.body.innerText;
+};
+
+/**
  * Initialize the ChromeAI RTD Module.
  * @param {Object} config
  * @param {Object} _userConsent
@@ -291,6 +461,9 @@ const init = async (config, _userConsent) => {
   
   // Get page summary using Chrome AI
   const summary = await getPageSummary(options);
+
+  // Get sentiment analysis using Chrome AI
+  const sentiment = await analyzeSentiment(summary);
   
   if (!summary) {
     logMessage(`${CONSTANTS.LOG_PRE_FIX} Failed to get page summary, aborting`);
