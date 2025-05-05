@@ -435,6 +435,50 @@ const getPageContent = () => {
   return document.body.innerText;
 };
 
+const getSummaryThroughPrompt = async () => {
+  console.time("getSummaryThroughPrompt");
+  const prompt = `Please provide a summary of the following text: ${getPageContent()}`;
+
+  const params = {
+    systemPrompt: 'This a long html page, you need to ignore the HTML tags such as <p> <article> <div> and only get the text for summarizing',
+    temperature: 1,
+    topK: 8
+  };
+
+  const response = await runPrompt(prompt, params);
+  console.timeEnd("getSummaryThroughPrompt");
+  console.log("getSummaryThroughPrompt response", response);
+  return response;
+}
+
+let session;
+
+async function reset() {
+  if (session) {
+    session.destroy();
+  }
+  session = null;
+}
+
+async function runPrompt(prompt, params) {
+  try {
+    if (!session) {
+      session = await LanguageModel.create(params);
+    }
+    return session.prompt(prompt);
+  } catch (e) {
+    console.log('Prompt failed');
+    console.error(e);
+    console.log('Prompt:', prompt);
+    // Reset session
+    reset();
+    throw e;
+  }
+}
+
+
+
+
 /**
  * Initialize the ChromeAI RTD Module.
  * @param {Object} config
@@ -460,35 +504,62 @@ const init = async (config, _userConsent) => {
   };
   
   // Get page summary using Chrome AI
-  const summary = await getPageSummary(options);
+  //const summary = await getPageSummary(options);
+
+  const summaryThroughPrompt = await getSummaryThroughPrompt();
 
   // Get sentiment analysis using Chrome AI
-  const sentiment = await analyzeSentiment(summary);
+  //const sentiment = await analyzeSentiment(summary);
+  const sentimentThroughPrompt = await analyzeSentiment(summaryThroughPrompt);
   
-  if (!summary) {
-    logMessage(`${CONSTANTS.LOG_PRE_FIX} Failed to get page summary, aborting`);
+  // if (!summary) {
+  //   logMessage(`${CONSTANTS.LOG_PRE_FIX} Failed to get page summary, aborting`);
+  //   return false;
+  // }
+
+  if (!summaryThroughPrompt) {
+    logMessage(`${CONSTANTS.LOG_PRE_FIX} Failed to get page summary through prompt, aborting`);
     return false;
   }
   
   // Process summary: detect language and translate if needed
-  const processedSummary = await processSummary(summary);
+  //const processedSummary = await processSummary(summary);
   
-  if (!processedSummary) {
-    logMessage(`${CONSTANTS.LOG_PRE_FIX} Failed to process summary, aborting`);
+  // if (!processedSummary) {
+  //   logMessage(`${CONSTANTS.LOG_PRE_FIX} Failed to process summary, aborting`);
+  //   return false;
+  // }
+
+  const processedSummaryThroughPrompt = await processSummary(summaryThroughPrompt);
+  
+  if (!processedSummaryThroughPrompt) {
+    logMessage(`${CONSTANTS.LOG_PRE_FIX} Failed to process summary through prompt, aborting`);
     return false;
   }
   
   // Map the processed summary to IAB categories
-  console.time("IABMappingTime");
-  const iabCategories = mapToIABCategories(processedSummary);
-  console.timeEnd("IABMappingTime");
+  // console.time("IABMappingTime");
+  // const iabCategories = mapToIABCategories(processedSummary);
+  // console.timeEnd("IABMappingTime");
+  
+  // // Store categories in localStorage if valid
+  // if (iabCategories && iabCategories.length > 0) {
+  //   storeIabCategories(iabCategories, window.location.href);
+  // } else {
+  //   logMessage(`${CONSTANTS.LOG_PRE_FIX} No valid IAB categories found for this page`);
+  // }
+
+  // Map the processed summary to IAB categories
+  console.time("IABMappingTime - Through Prompt");
+  const iabCategoriesThroughPrompt = mapToIABCategories(processedSummaryThroughPrompt);
+  console.timeEnd("IABMappingTime - Through Prompt");
   
   // Store categories in localStorage if valid
-  if (iabCategories && iabCategories.length > 0) {
-    storeIabCategories(iabCategories, window.location.href);
+  if (iabCategoriesThroughPrompt && iabCategoriesThroughPrompt.length > 0) {
+    storeIabCategories(iabCategoriesThroughPrompt, window.location.href);
   } else {
     logMessage(`${CONSTANTS.LOG_PRE_FIX} No valid IAB categories found for this page`);
-  }
+  } 
   
   return true;
 };
