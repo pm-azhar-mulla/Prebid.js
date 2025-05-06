@@ -1,4 +1,4 @@
-import { logWarn, isStr, isArray, deepAccess, deepSetValue, isBoolean, isInteger, logInfo, logError, deepClone, uniques, generateUUID, isPlainObject, isFn } from '../src/utils.js';
+import { logWarn, isStr, isArray, deepAccess, deepSetValue, isBoolean, isInteger, logInfo, logError, deepClone, uniques, generateUUID, isPlainObject, isFn, getWindowTop } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO, NATIVE, ADPOD } from '../src/mediaTypes.js';
 import { config } from '../src/config.js';
@@ -6,6 +6,7 @@ import { Renderer } from '../src/Renderer.js';
 import { bidderSettings } from '../src/bidderSettings.js';
 import { ortbConverter } from '../libraries/ortbConverter/converter.js';
 import { NATIVE_ASSET_TYPES, NATIVE_IMAGE_TYPES, PREBID_NATIVE_DATA_KEYS_TO_ORTB, NATIVE_KEYS_THAT_ARE_NOT_ASSETS, NATIVE_KEYS } from '../src/constants.js';
+import { percentInView } from '../libraries/percentInView/percentInView.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -64,6 +65,12 @@ const converter = ortbConverter({
     const { kadfloor, currency, adSlot = '', deals, dctr, pmzoneid, hashedKey } = bidRequest.params;
     const { adUnitCode, mediaTypes, rtd } = bidRequest;
     const imp = buildImp(bidRequest, context);
+
+    // Check if the imp object does not have banner, video, or native
+
+    if (!imp.hasOwnProperty('banner') && !imp.hasOwnProperty('video') && !imp.hasOwnProperty('native')) {
+      return null;
+    }
     if (deals) addPMPDeals(imp, deals);
     if (dctr) addDealCustomTargetings(imp, dctr);
     if (rtd?.jwplayer) addJWPlayerSegmentData(imp, rtd.jwplayer);
@@ -71,12 +78,9 @@ const converter = ortbConverter({
     imp.bidfloorcur = currency ? _parseSlotParam('currency', currency) : DEFAULT_CURRENCY;
     setFloorInImp(imp, bidRequest);
     if (imp.hasOwnProperty('banner')) updateBannerImp(imp.banner, adSlot);
-    if (imp.hasOwnProperty('video')) updateVideoImp(imp.video, mediaTypes?.video, adUnitCode, imp);
+    if (imp.hasOwnProperty('video')) updateVideoImp(mediaTypes?.video, adUnitCode, imp);
     if (imp.hasOwnProperty('native')) updateNativeImp(imp, mediaTypes?.native);
-    // Check if the imp object does not have banner, video, or native
-    if (!imp.hasOwnProperty('banner') && !imp.hasOwnProperty('video') && !imp.hasOwnProperty('native')) {
-      return null;
-    }
+    if (imp.hasOwnProperty('banner') || imp.hasOwnProperty('video')) addViewabilityToImp(imp, adUnitCode, bidRequest?.sizes);
     if (pmzoneid) imp.ext.pmZoneId = pmzoneid;
     setImpTagId(imp, adSlot.trim(), hashedKey);
     setImpFields(imp);
@@ -343,13 +347,15 @@ const updateNativeImp = (imp, nativeParams) => {
   }
 }
 
-const updateVideoImp = (videoImp, videoParams, adUnitCode, imp) => {
+const updateVideoImp = (videoParams, adUnitCode, imp) => {
+  const videoImp = imp.video;
   if (!deepAccess(videoParams, 'plcmt')) {
     logWarn(MSG_VIDEO_PLCMT_MISSING + ' for ' + adUnitCode);
   };
   if (!videoParams || (!videoImp.w && !videoImp.h)) {
     delete imp.video;
     logWarn(`${LOG_WARN_PREFIX}Error: Missing ${!videoParams ? 'video config params' : 'video size params (playersize or w&h)'} for adunit: ${adUnitCode} with mediaType set as video. Ignoring video impression in the adunit.`);
+    return;
   }
 }
 
@@ -638,6 +644,77 @@ const _handleCustomParams = (params, conf) => {
     }
   });
   return conf;
+};
+
+function _isIframe() {
+  try {
+    return window.self !== window.top;
+  } catch (e) {
+    return true;
+  }
+}
+
+/**
+ * Checks if viewability can be measured for an element
+ * @param {HTMLElement} element - DOM element to check
+ * @returns {boolean} True if viewability is measurable
+ */
+export function _isViewabilityMeasurable(element) {
+  return !_isIframe() && element !== null;
+}
+
+/**
+ * Gets the viewability percentage of an element
+ * @param {HTMLElement} element - DOM element to measure
+ * @param {Window} topWin - Top window object
+ * @param {Object} size - Size object with width and height
+ * @returns {number|string} Viewability percentage or 0 if not visible
+ */
+export function _getViewability(element, topWin, { w, h } = {}) {
+  return topWin.document.visibilityState === 'visible'
+    ? percentInView(element, { w, h })
+    : 0;
+}
+
+/**
+ * Gets the minimum size from an array of sizes
+ * @param {Array} sizes - Array of size objects with w and h properties
+ * @returns {Object} The smallest size object
+ */
+function _getMinSize(sizes) {
+  return (!sizes || !sizes.length ? { w: 0, h: 0 } : sizes.reduce((min, size) => size.h * size.w < min.h * min.w ? size : min, sizes[0]));
+}
+
+/**
+ * Measures viewability for an element and adds it to the imp object at the ext level
+ * @param {Object} imp - The impression object
+ * @param {string} adUnitCode - The ad unit code for element identification
+ * @param {Object} size - Size object with width and height properties
+ */
+export const addViewabilityToImp = (imp, adUnitCode, sizes) => {
+  let elementSize = { w: 0, h: 0 };
+
+  if (imp.video?.w > 0 && imp.video?.h > 0) {
+    elementSize.w = imp.video.w;
+    elementSize.h = imp.video.h;
+  } else {
+    elementSize = _getMinSize(sizes);
+  }
+  const element = document.getElementById(adUnitCode);
+  if (!element) return;
+
+  const viewabilityAmount = _isViewabilityMeasurable(element)
+    ? _getViewability(element, getWindowTop(), elementSize)
+    : 'na';
+
+  if (!imp.ext) {
+    imp.ext = {};
+  }
+
+  // Add viewability data at the imp.ext level
+  imp.ext.viewability = {
+    amount: isNaN(viewabilityAmount) ? viewabilityAmount : Math.round(viewabilityAmount)
+  };
 };
 
 export const spec = {
