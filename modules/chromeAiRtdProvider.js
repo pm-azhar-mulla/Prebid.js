@@ -1,3 +1,8 @@
+/* eslint-disable no-unused-vars */
+/* eslint-disable no-restricted-properties */
+/* eslint-disable no-console */
+/* eslint-disable no-undef */
+/* eslint-disable no-restricted-globals */
 import { submodule } from '../src/hook.js';
 import { logError, mergeDeep, logMessage } from '../src/utils.js';
 /**
@@ -19,7 +24,7 @@ const CONSTANTS = Object.freeze({
 const isIabCategoryInLocalStorage = () => {
   const currentUrl = window.location.href;
   const storedCategoriesJson = localStorage.getItem(CONSTANTS.STORAGE_KEY);
-  
+
   if (storedCategoriesJson) {
     try {
       const categoriesObject = JSON.parse(storedCategoriesJson);
@@ -30,7 +35,7 @@ const isIabCategoryInLocalStorage = () => {
       logError(`${CONSTANTS.LOG_PRE_FIX} Error parsing localStorage:`, e);
     }
   }
-  
+
   return null;
 };
 
@@ -61,15 +66,14 @@ const getPageSummary = async (options) => {
       });
       await summarizer.ready;
     }
-    
+
     const longText = document.querySelector('body').innerText;
     const summary = await summarizer.summarize(longText, {
       context: 'This a long html page, you need to ignore the HTML tags such as <p> <article> <div> and only get the text for summarizing',
     });
-    
+
     console.timeEnd("summarizerApiTime");
     logMessage(`${CONSTANTS.LOG_PRE_FIX} Summary >> `, summary);
-    
     return summary;
   } catch (error) {
     logError(`${CONSTANTS.LOG_PRE_FIX} Error getting page summary:`, error);
@@ -89,22 +93,22 @@ const storeIabCategories = (iabCategories, url) => {
       logMessage(`${CONSTANTS.LOG_PRE_FIX} No valid IAB categories to store`);
       return false;
     }
-    
+
     // Get existing categories object or create a new one
     let categoriesObject = {};
     const storedCategoriesJson = localStorage.getItem(CONSTANTS.STORAGE_KEY);
-    
+
     if (storedCategoriesJson) {
       categoriesObject = JSON.parse(storedCategoriesJson);
     }
-    
+
     // Store the result in the categories object
     categoriesObject[url] = iabCategories;
-    
+
     // Save the updated object back to localStorage
     localStorage.setItem(CONSTANTS.STORAGE_KEY, JSON.stringify(categoriesObject));
     logMessage(`${CONSTANTS.LOG_PRE_FIX} IAB Categories stored in localStorage:`, iabCategories);
-    
+
     return true;
   } catch (error) {
     logError(`${CONSTANTS.LOG_PRE_FIX} Error storing IAB categories:`, error);
@@ -124,17 +128,17 @@ const detectLanguage = async (text) => {
       logError(`${CONSTANTS.LOG_PRE_FIX} Language detection API is not available`);
       return null;
     }
-    
+
     // Check capabilities
     const languageDetectorAvailability = await LanguageDetector.availability();
-    //const canDetect = languageDetectorAvailability.available;
-    
+    // const canDetect = languageDetectorAvailability.available;
+
     if (languageDetectorAvailability === 'unavailable') {
       // The language detector isn't usable
       logError(`${CONSTANTS.LOG_PRE_FIX} Language detector is not available`);
       return null;
     }
-    
+
     let detector;
     if (languageDetectorAvailability === 'available') {
       // The language detector can immediately be used
@@ -150,15 +154,15 @@ const detectLanguage = async (text) => {
       });
       await detector.ready;
     }
-    
+
     // Detect language
     const results = await detector.detect(text);
-    
+
     if (!results || results.length === 0) {
       logError(`${CONSTANTS.LOG_PRE_FIX} No language detection results`);
       return null;
     }
-    
+
     const topResult = results[0];
     logMessage(`${CONSTANTS.LOG_PRE_FIX} Detected language: ${topResult.detectedLanguage} (confidence: ${topResult.confidence})`);
     return topResult.detectedLanguage;
@@ -181,17 +185,20 @@ const translateToEnglish = async (text, sourceLanguage) => {
       logError(`${CONSTANTS.LOG_PRE_FIX} Translation API is not available`);
       return null;
     }
-    
+
     // Check capabilities
-    const translatorAvailability = await Translator.availability();
-    //const canTranslate = translatorAvailability.available;
-    
+    const translatorAvailability = await Translator.availability({
+      sourceLanguage: sourceLanguage,
+      targetLanguage: 'en',
+    });
+    // const canTranslate = translatorAvailability.available;
+
     if (translatorAvailability === 'unavailable') {
       // The translator isn't usable
       logError(`${CONSTANTS.LOG_PRE_FIX} Translator is not available`);
       return null;
     }
-    
+
     let translator;
     if (translatorAvailability === 'available') {
       // The translator can immediately be used
@@ -212,15 +219,15 @@ const translateToEnglish = async (text, sourceLanguage) => {
       });
       await translator.ready;
     }
-    
+
     // Translate text
     const result = await translator.translate(text);
-    
+
     if (!result) {
       logError(`${CONSTANTS.LOG_PRE_FIX} No translation result`);
       return null;
     }
-    
+
     logMessage(`${CONSTANTS.LOG_PRE_FIX} Translation complete`);
     return result;
   } catch (error) {
@@ -238,25 +245,25 @@ const processSummary = async (summary) => {
   try {
     // Detect language
     const detectedLanguage = await detectLanguage(summary);
-    
+
     if (!detectedLanguage) {
       logError(`${CONSTANTS.LOG_PRE_FIX} Failed to detect language, using original summary`);
       return summary;
     }
-    
+
     // If language is not English, translate to English
     if (detectedLanguage.toLowerCase() !== 'en') {
       logMessage(`${CONSTANTS.LOG_PRE_FIX} Non-English content detected (${detectedLanguage}), translating to English`);
       const translatedSummary = await translateToEnglish(summary, detectedLanguage);
-      
+
       if (!translatedSummary) {
         logError(`${CONSTANTS.LOG_PRE_FIX} Translation failed, using original summary`);
         return summary;
       }
-      
+
       return translatedSummary;
     }
-    
+
     // If language is English, return original summary
     logMessage(`${CONSTANTS.LOG_PRE_FIX} English content detected, no translation needed`);
     return summary;
@@ -273,7 +280,7 @@ const processSummary = async (summary) => {
 const isSentimentInLocalStorage = () => {
   const currentUrl = window.location.href;
   const storedSentimentJson = localStorage.getItem(CONSTANTS.SENTIMENT_STORAGE_KEY);
-  
+
   if (storedSentimentJson) {
     try {
       const sentimentObject = JSON.parse(storedSentimentJson);
@@ -284,7 +291,7 @@ const isSentimentInLocalStorage = () => {
       logError(`${CONSTANTS.LOG_PRE_FIX} Error parsing sentiment from localStorage:`, e);
     }
   }
-  
+
   return null;
 };
 
@@ -299,7 +306,7 @@ const storeSentiment = (sentiment, url) => {
     // Get existing sentiment data or create new object
     const existingDataJson = localStorage.getItem(CONSTANTS.SENTIMENT_STORAGE_KEY);
     let sentimentObject = {};
-    
+
     if (existingDataJson) {
       try {
         sentimentObject = JSON.parse(existingDataJson);
@@ -307,14 +314,14 @@ const storeSentiment = (sentiment, url) => {
         logError(`${CONSTANTS.LOG_PRE_FIX} Error parsing existing sentiment data:`, e);
       }
     }
-    
+
     // Add new sentiment data for this URL
     sentimentObject[url] = sentiment;
-    
+
     // Store updated data
     localStorage.setItem(CONSTANTS.SENTIMENT_STORAGE_KEY, JSON.stringify(sentimentObject));
     logMessage(`${CONSTANTS.LOG_PRE_FIX} Sentiment stored for URL:`, url);
-    
+
     return true;
   } catch (e) {
     logError(`${CONSTANTS.LOG_PRE_FIX} Error storing sentiment:`, e);
@@ -335,17 +342,17 @@ const analyzeSentiment = async (text) => {
       logMessage(`${CONSTANTS.LOG_PRE_FIX} Chrome AI Prompt API is not available`);
       return null;
     }
-    
+
     // Check capabilities
     const availability = await LanguageModel.availability();
     if (availability === 'unavailable') {
       logMessage(`${CONSTANTS.LOG_PRE_FIX} Chrome AI Prompt API isn't available`);
       return null;
     }
-    
+
     logMessage(`${CONSTANTS.LOG_PRE_FIX} Chrome AI Prompt API status:`, availability);
     console.time("sentimentAnalysisTime");
-    
+
     // Create prompt for sentiment analysis
     const prompt = `
       Analyze the sentiment of the following text. Determine if it is positive, negative, or neutral.
@@ -363,7 +370,7 @@ const analyzeSentiment = async (text) => {
         "intensity": "low|medium|high"
       }
     `;
-    
+
     // Initialize the prompt API
     let promptApi;
     if (availability === 'available') {
@@ -374,21 +381,21 @@ const analyzeSentiment = async (text) => {
       promptApi = await LanguageModel.create({
         systemPrompt: prompt,
       });
-      
+
       // Monitor download progress if needed
       promptApi.addEventListener('downloadprogress', (e) => {
         logMessage(`${CONSTANTS.LOG_PRE_FIX} Prompt API download progress:`, e.loaded, 'of', e.total);
       });
-      
+
       await promptApi.ready;
     }
-    
+
     // Generate the response
     console.log("Azzi prompt>>", promptApi);
     const response = await promptApi.prompt('What is the sentiment analyisis for this page? give me answer in json format as specified in system prompt');
-    console.log("response>>",response);
+    console.log("response>>", response);
     console.timeEnd("sentimentAnalysisTime");
-    
+
     // Parse the JSON response
     try {
       // Look for JSON in the response
@@ -420,17 +427,17 @@ const getPageContent = () => {
   // Get the main content of the page
   // First try to find the main content element
   const mainContent = document.querySelector('body');
-  
+
   if (mainContent) {
     return mainContent.innerText;
   }
-  
+
   // If no main content element is found, get all paragraph text
   const paragraphs = document.querySelectorAll('p');
   if (paragraphs.length > 0) {
     return Array.from(paragraphs).map(p => p.innerText).join(' ');
   }
-  
+
   // Fallback to body text
   return document.body.innerText;
 };
@@ -443,53 +450,52 @@ const getPageContent = () => {
  */
 const init = async (config, _userConsent) => {
   logMessage(`${CONSTANTS.LOG_PRE_FIX} config:`, config);
-  
+
   // Check if IAB categories already exist in localStorage
   const storedCategories = isIabCategoryInLocalStorage();
-  
+
   if (storedCategories) {
     logMessage(`${CONSTANTS.LOG_PRE_FIX} IAB Categories already in localStorage, skipping mapping`, storedCategories);
     return true;
   }
-  
+
   // Define summarizer options
   const options = {
     type: 'teaser',
     format: 'markdown',
     length: 'long',
   };
-  
+
   // Get page summary using Chrome AI
   const summary = await getPageSummary(options);
 
-  // Get sentiment analysis using Chrome AI
-  const sentiment = await analyzeSentiment(summary);
-  
   if (!summary) {
     logMessage(`${CONSTANTS.LOG_PRE_FIX} Failed to get page summary, aborting`);
     return false;
   }
-  
+
   // Process summary: detect language and translate if needed
   const processedSummary = await processSummary(summary);
-  
   if (!processedSummary) {
     logMessage(`${CONSTANTS.LOG_PRE_FIX} Failed to process summary, aborting`);
     return false;
   }
-  
+
+  // Get sentiment analysis using Chrome AI
+  const sentiment = await analyzeSentiment(processedSummary);
+
   // Map the processed summary to IAB categories
   console.time("IABMappingTime");
   const iabCategories = mapToIABCategories(processedSummary);
   console.timeEnd("IABMappingTime");
-  
+
   // Store categories in localStorage if valid
   if (iabCategories && iabCategories.length > 0) {
     storeIabCategories(iabCategories, window.location.href);
   } else {
     logMessage(`${CONSTANTS.LOG_PRE_FIX} No valid IAB categories found for this page`);
   }
-  
+
   return true;
 };
 
@@ -501,14 +507,14 @@ const init = async (config, _userConsent) => {
  */
 const getBidRequestData = (reqBidsConfigObj, callback) => {
     logMessage(`${CONSTANTS.LOG_PRE_FIX} reqBidsConfigObj:`, reqBidsConfigObj);
-    
+
     // Check if IAB categories exist in localStorage
     const storedCategories = isIabCategoryInLocalStorage();
     if (storedCategories) {
       logMessage(`${CONSTANTS.LOG_PRE_FIX} Setting IAB Categories from localStorage:`, storedCategories);
       mergeDeep(reqBidsConfigObj.ortb2Fragments.bidder, {
                     'pubmatic': {
-                        site:{
+                        site: {
                             ext: storedCategories
                         }
                     }
@@ -517,7 +523,7 @@ const getBidRequestData = (reqBidsConfigObj, callback) => {
       logMessage(`${CONSTANTS.LOG_PRE_FIX} No IAB Categories found in localStorage for current URL`);
     }
     logMessage(`${CONSTANTS.LOG_PRE_FIX} after changing:`, reqBidsConfigObj);
-    
+
     callback();
 }
 
@@ -655,7 +661,7 @@ const IAB_CATEGORIES = {
       "keywords": ["religion", "spiritual", "faith", "god", "church", "prayer", "worship", "belief", "religious", "christian", "muslim", "islam", "hindu", "buddhist", "jewish"]
     }
   };
-  
+
   /**
    * Maps text content to relevant IAB categories using keyword matching
    * @param {string} text - The text to analyze for IAB category mapping
@@ -664,26 +670,26 @@ const IAB_CATEGORIES = {
   function mapToIABCategories(text) {
     // Convert input text to lowercase for case-insensitive matching
     const lowerText = text.toLowerCase();
-    
+
     // Store matches with their scores
     const categoryMatches = {};
-    
+
     // Iterate through each IAB category
     for (const [categoryCode, category] of Object.entries(IAB_CATEGORIES)) {
       let score = 0;
-      
+
       // Check for keyword matches in the main category
       for (const keyword of category.keywords) {
         // Use regular expression to find whole word matches
         const regex = new RegExp(`\\b${keyword}\\b`, 'gi');
         const matches = lowerText.match(regex);
-        
+
         if (matches) {
           // Add to the score based on the number of matches
           score += matches.length;
         }
       }
-      
+
       // If we have matches, store the category with its score
       if (score > 0) {
         categoryMatches[categoryCode] = {
@@ -692,29 +698,29 @@ const IAB_CATEGORIES = {
           score: score,
           subcategories: []
         };
-        
+
         // Check for subcategory matches
         for (const [subCode, subName] of Object.entries(category.subcategories)) {
           // Convert subcategory name to keywords
           const subKeywords = subName.toLowerCase().split(/\s+/);
           let subScore = 0;
-          
+
           for (const keyword of subKeywords) {
             if (keyword.length < 3) continue; // Skip short words
-            
+
             const regex = new RegExp(`\\b${keyword}\\b`, 'gi');
             const matches = lowerText.match(regex);
-            
+
             if (matches) {
               subScore += matches.length;
             }
           }
-          
+
           // Special case for Cricket
           if (subCode === "IAB17-9" && /\bcricket\b/i.test(lowerText)) {
             subScore += 10; // Give a high score for direct cricket mentions
           }
-          
+
           if (subScore > 0) {
             categoryMatches[categoryCode].subcategories.push({
               code: subCode,
@@ -725,18 +731,18 @@ const IAB_CATEGORIES = {
         }
       }
     }
-    
+
     // Convert to array and sort by score (highest first)
     const sortedCategories = Object.values(categoryMatches)
       .sort((a, b) => b.score - a.score)
       .slice(0, 3); // Get top 3 categories
-    
+
     // Format the results
     const result = [];
     for (const category of sortedCategories) {
       // Sort subcategories by score
       category.subcategories.sort((a, b) => b.score - a.score);
-      
+
       if (category.subcategories.length > 0) {
         // Add the top subcategory
         const topSubcategory = category.subcategories[0];
@@ -765,7 +771,6 @@ const IAB_CATEGORIES = {
         });
       }
     }
-    
+
     return result;
   }
-  
