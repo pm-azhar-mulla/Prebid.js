@@ -8,9 +8,14 @@ const CONSTANTS = Object.freeze({
   SUBMODULE_NAME: 'chromeAi',
   REAL_TIME_MODULE: 'realTimeData',
   LOG_PRE_FIX: 'ChromeAI-Rtd-Provider: ',
-  STORAGE_KEY: 'chromeAi_iabCategories',
-  SENTIMENT_STORAGE_KEY: 'chromeAi_sentiment'
+  STORAGE_KEY: 'chromeAi_pageData'
 });
+
+// Global variable to store page data (IAB categories and sentiment analysis)
+let pageData = {
+  iabCategories: null,
+  sentiment: null
+};
 
 /**
  * Check if IAB categories exist in localStorage for the current URL
@@ -18,16 +23,16 @@ const CONSTANTS = Object.freeze({
  */
 const isIabCategoryInLocalStorage = () => {
   const currentUrl = window.location.href;
-  const storedCategoriesJson = localStorage.getItem(CONSTANTS.STORAGE_KEY);
+  const storedDataJson = localStorage.getItem(CONSTANTS.STORAGE_KEY);
   
-  if (storedCategoriesJson) {
+  if (storedDataJson) {
     try {
-      const categoriesObject = JSON.parse(storedCategoriesJson);
-      if (categoriesObject[currentUrl]) {
-        return categoriesObject[currentUrl];
+      const storedData = JSON.parse(storedDataJson);
+      if (storedData[currentUrl] && storedData[currentUrl].iabCategories) {
+        return storedData[currentUrl].iabCategories;
       }
     } catch (e) {
-      logError(`${CONSTANTS.LOG_PRE_FIX} Error parsing localStorage:`, e);
+      logError(`${CONSTANTS.LOG_PRE_FIX} Error parsing stored IAB categories:`, e);
     }
   }
   
@@ -90,19 +95,22 @@ const storeIabCategories = (iabCategories, url) => {
       return false;
     }
     
-    // Get existing categories object or create a new one
-    let categoriesObject = {};
-    const storedCategoriesJson = localStorage.getItem(CONSTANTS.STORAGE_KEY);
+    // Get existing data object or create a new one
+    let storedData = {};
+    const storedDataJson = localStorage.getItem(CONSTANTS.STORAGE_KEY);
     
-    if (storedCategoriesJson) {
-      categoriesObject = JSON.parse(storedCategoriesJson);
+    if (storedDataJson) {
+      storedData = JSON.parse(storedDataJson);
     }
     
-    // Store the result in the categories object
-    categoriesObject[url] = iabCategories;
+    // Store the result in the data object
+    if (!storedData[url]) {
+      storedData[url] = {};
+    }
+    storedData[url].iabCategories = iabCategories;
     
     // Save the updated object back to localStorage
-    localStorage.setItem(CONSTANTS.STORAGE_KEY, JSON.stringify(categoriesObject));
+    localStorage.setItem(CONSTANTS.STORAGE_KEY, JSON.stringify(storedData));
     logMessage(`${CONSTANTS.LOG_PRE_FIX} IAB Categories stored in localStorage:`, iabCategories);
     
     return true;
@@ -183,7 +191,10 @@ const translateToEnglish = async (text, sourceLanguage) => {
     }
     
     // Check capabilities
-    const translatorAvailability = await Translator.availability();
+    const translatorAvailability = await Translator.availability({
+      sourceLanguage: sourceLanguage,
+      targetLanguage: 'en',
+    });
     //const canTranslate = translatorAvailability.available;
     
     if (translatorAvailability === 'unavailable') {
@@ -272,13 +283,13 @@ const processSummary = async (summary) => {
  */
 const isSentimentInLocalStorage = () => {
   const currentUrl = window.location.href;
-  const storedSentimentJson = localStorage.getItem(CONSTANTS.SENTIMENT_STORAGE_KEY);
+  const storedDataJson = localStorage.getItem(CONSTANTS.STORAGE_KEY);
   
-  if (storedSentimentJson) {
+  if (storedDataJson) {
     try {
-      const sentimentObject = JSON.parse(storedSentimentJson);
-      if (sentimentObject[currentUrl]) {
-        return sentimentObject[currentUrl];
+      const storedData = JSON.parse(storedDataJson);
+      if (storedData[currentUrl] && storedData[currentUrl].sentiment) {
+        return storedData[currentUrl].sentiment;
       }
     } catch (e) {
       logError(`${CONSTANTS.LOG_PRE_FIX} Error parsing sentiment from localStorage:`, e);
@@ -296,23 +307,22 @@ const isSentimentInLocalStorage = () => {
  */
 const storeSentiment = (sentiment, url) => {
   try {
-    // Get existing sentiment data or create new object
-    const existingDataJson = localStorage.getItem(CONSTANTS.SENTIMENT_STORAGE_KEY);
-    let sentimentObject = {};
+    // Get existing data object or create new object
+    let storedData = {};
+    const storedDataJson = localStorage.getItem(CONSTANTS.STORAGE_KEY);
     
-    if (existingDataJson) {
-      try {
-        sentimentObject = JSON.parse(existingDataJson);
-      } catch (e) {
-        logError(`${CONSTANTS.LOG_PRE_FIX} Error parsing existing sentiment data:`, e);
-      }
+    if (storedDataJson) {
+      storedData = JSON.parse(storedDataJson);
     }
     
     // Add new sentiment data for this URL
-    sentimentObject[url] = sentiment;
+    if (!storedData[url]) {
+      storedData[url] = {};
+    }
+    storedData[url].sentiment = sentiment;
     
     // Store updated data
-    localStorage.setItem(CONSTANTS.SENTIMENT_STORAGE_KEY, JSON.stringify(sentimentObject));
+    localStorage.setItem(CONSTANTS.STORAGE_KEY, JSON.stringify(storedData));
     logMessage(`${CONSTANTS.LOG_PRE_FIX} Sentiment stored for URL:`, url);
     
     return true;
@@ -348,20 +358,59 @@ const analyzeSentiment = async (text) => {
     
     // Create prompt for sentiment analysis
     const prompt = `
-      Analyze the sentiment of the following text. Determine if it is positive, negative, or neutral.
-      Also identify the main emotions expressed (like joy, anger, sadness, fear, surprise, etc.) and the overall tone.
-      
-      Text to analyze:
+      You are a specialized sentiment analysis expert with particular expertise in detecting negative content, especially in news articles. Your primary goal is to accurately identify negative sentiment, and you should err on the side of classifying content as negative when there are any concerning elements present.
+
+      CRITICAL INSTRUCTION: News content about war, conflict, violence, suffering, death, disasters, or political criticism should ALWAYS be classified as negative with high confidence. Journalistic neutrality in tone does NOT make negative subject matter neutral. The content itself determines the sentiment.
+
+      TASK:
+      1. Carefully analyze the text for sentiment, with a strong bias toward detecting negative content
+      2. ANY presence of the following elements should trigger a negative sentiment classification:
+         - Descriptions of violence, conflict, suffering, or harm (even if reported factually)
+         - Words conveying distress, fear, anger, or hopelessness
+         - Mentions of death, destruction, failure, or loss
+         - Critical or accusatory language
+         - Presence of threatening or alarming content
+         - Political tensions or disagreements
+         - Environmental concerns or damage
+         - Economic problems or challenges
+      3. Identify the primary and secondary emotions that would be evoked in readers
+      4. Evaluate the intensity of these emotions
+      5. Determine the overall tone and formality level
+      6. Assess the potential psychological impact on readers
+
+      TEXT TO ANALYZE:
       "${text}"
-      
-      Format your response as a JSON object with the following structure:
+
+      FORMAT YOUR RESPONSE AS A JSON OBJECT WITH THE FOLLOWING STRUCTURE:
       {
         "sentiment": "positive|negative|neutral",
-        "confidence": [number between 0-1],
-        "emotions": ["emotion1", "emotion2"],
-        "tone": "formal|informal|technical|casual|etc",
-        "intensity": "low|medium|high"
+        "sentiment_score": [number between -1.0 and 1.0, where -1.0 is extremely negative, 0 is neutral, and 1.0 is extremely positive],
+        "confidence": [number between 0 and 1],
+        "primary_emotions": ["emotion1", "emotion2"],
+        "secondary_emotions": ["emotion3", "emotion4"],
+        "emotional_intensity": "low|medium|high|extreme",
+        "tone": "formal|informal|technical|casual|journalistic|academic|alarmist|etc",
+        "content_categories": ["category1", "category2"],
+        "concerning_elements": ["element1", "element2"],
+        "psychological_impact": "minimal|moderate|significant|severe",
+        "summary": "A brief 1-2 sentence summary of the overall sentiment analysis"
       }
+
+      EXAMPLES OF NEGATIVE CONTENT THAT MUST BE CLASSIFIED AS NEGATIVE:
+      1. News about war or armed conflict (even if reported factually)
+      2. Reports of casualties, injuries, or deaths
+      3. Articles about disasters, accidents, or emergencies
+      4. Content describing economic downturns or financial problems
+      5. Political criticism or controversy
+      6. Environmental damage or climate concerns
+      7. Health crises or disease outbreaks
+      8. Crime reports or security threats
+      9. Social issues like poverty, inequality, or discrimination
+      10. Personal struggles, challenges, or hardships
+
+      IMPORTANT: For news content, the factual or journalistic tone does NOT make negative subject matter neutral. The content itself determines the sentiment. A factual report about war casualties is still negative content.
+      
+      When in doubt, classify as negative. It is better to incorrectly classify neutral content as negative than to miss truly negative content.
     `;
     
     // Initialize the prompt API
@@ -493,7 +542,14 @@ const init = async (config, _userConsent) => {
   
   if (storedCategories) {
     logMessage(`${CONSTANTS.LOG_PRE_FIX} IAB Categories already in localStorage, skipping mapping`, storedCategories);
-    return true;
+  }
+  
+  // Check if sentiment analysis already exists in localStorage
+  const storedSentiment = isSentimentInLocalStorage();
+  
+  if (storedSentiment) {
+    logMessage(`${CONSTANTS.LOG_PRE_FIX} Sentiment analysis already in localStorage, skipping analysis`, storedSentiment);
+    return true
   }
   
   // Define summarizer options
@@ -559,7 +615,33 @@ const init = async (config, _userConsent) => {
     storeIabCategories(iabCategoriesThroughPrompt, window.location.href);
   } else {
     logMessage(`${CONSTANTS.LOG_PRE_FIX} No valid IAB categories found for this page`);
-  } 
+  }
+
+   // Get sentiment analysis using Chrome AI if not already in localStorage
+   let sentiment;
+   if (!storedSentiment) {
+     const pageContent = processedSummary || getPageContent();
+     
+     // Truncate content if it's too long (Prompt API may have limits)
+     const truncatedContent = pageContent.length > 5000 ? pageContent.substring(0, 5000) + '...' : pageContent;
+     
+     // Perform sentiment analysis
+     sentiment = await analyzeSentiment(truncatedContent);
+ 
+     
+     // Store sentiment in localStorage if valid
+     if (sentiment) {
+       storeSentiment(sentiment, window.location.href);
+     } else {
+       logMessage(`${CONSTANTS.LOG_PRE_FIX} Failed to get sentiment analysis`);
+     }
+   } else {
+     sentiment = storedSentiment;
+   }
+  
+  // Update global page data
+  pageData.iabCategories = iabCategories;
+  pageData.sentiment = sentiment;
   
   return true;
 };
@@ -575,17 +657,37 @@ const getBidRequestData = (reqBidsConfigObj, callback) => {
     
     // Check if IAB categories exist in localStorage
     const storedCategories = isIabCategoryInLocalStorage();
-    if (storedCategories) {
-      logMessage(`${CONSTANTS.LOG_PRE_FIX} Setting IAB Categories from localStorage:`, storedCategories);
-      mergeDeep(reqBidsConfigObj.ortb2Fragments.bidder, {
-                    'pubmatic': {
-                        site:{
-                            ext: storedCategories
-                        }
-                    }
-                });
+    // Check if sentiment analysis exists in localStorage
+    const storedSentiment = isSentimentInLocalStorage();
+    
+    // Update global pageData
+    pageData.iabCategories = storedCategories;
+    pageData.sentiment = storedSentiment;
+    
+    if (storedCategories || storedSentiment) {
+      logMessage(`${CONSTANTS.LOG_PRE_FIX} Setting IAB Categories and/or Sentiment from localStorage:`, storedCategories, storedSentiment);
+      
+      const pubmaticData = {
+        'pubmatic': {
+          site: {}
+        }
+      };
+      
+      if (storedCategories || storedSentiment) {
+        pubmaticData.pubmatic.site.ext = {};
+        if (storedCategories) {
+          pubmaticData.pubmatic.site.ext.iab = storedCategories;
+        }
+        
+        if (storedSentiment) {
+          pubmaticData.pubmatic.site.ext.sentiment = storedSentiment;
+        }
+      }
+      
+      // Merge the data into reqBidsConfigObj
+      mergeDeep(reqBidsConfigObj.ortb2Fragments.bidder, pubmaticData);
     } else {
-      logMessage(`${CONSTANTS.LOG_PRE_FIX} No IAB Categories found in localStorage for current URL`);
+      logMessage(`${CONSTANTS.LOG_PRE_FIX} No IAB Categories or Sentiment found in localStorage for current URL`);
     }
     logMessage(`${CONSTANTS.LOG_PRE_FIX} after changing:`, reqBidsConfigObj);
     

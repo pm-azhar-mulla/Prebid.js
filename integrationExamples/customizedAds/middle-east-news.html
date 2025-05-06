@@ -1,0 +1,665 @@
+<!--
+  This page calls a single bidder for a single ad slot. It demonstrates using
+  Prebid with the Google Publisher Tag for a news page about the Israel-Palestine conflict.
+-->
+
+<html>
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Middle East Conflict News | Latest Updates</title>
+        <script async src="../../build/dev/prebid.js"></script>
+        <script async src="https://www.googletagservices.com/tag/js/gpt.js"></script>
+        <script>
+            var FAILSAFE_TIMEOUT = 3300;
+            var PREBID_TIMEOUT = 3000;
+    
+            var adUnits = [{
+                code: 'div-gpt-ad-1460505748561-0',
+                mediaTypes: {
+                    banner: {
+                        sizes: [[300,250]],
+                    }
+                },            
+                // Replace this object to test a new Adapter!
+                bids: [{
+                        bidder: 'pubmatic',
+                        params: {
+                            publisherId: '103207',
+                            adUnit: 'dcomHomeTop-300x250'
+                        },
+                    },
+                    {bidder: "appnexus",
+                    params: {placementId: '8801674'}
+                      }
+    
+                ]
+            }];
+    
+            var pbjs = pbjs || {};
+            pbjs.que = pbjs.que || [];
+    
+        </script>
+    
+        <script>
+            var googletag = googletag || {};
+            googletag.cmd = googletag.cmd || [];
+            
+            function initAdserver() {
+                if (pbjs.initAdserverSet) return;
+                pbjs.initAdserverSet = true;
+                googletag.cmd.push(function() {
+                    pbjs.que.push(function() {
+                        pbjs.setTargetingForGPTAsync();
+                        googletag.pubads().refresh();
+                    });
+                });
+            }
+            
+            function sendAdserverRequest() {
+                if (pbjs.adserverRequestSent) return;
+                pbjs.adserverRequestSent = true;
+                googletag.cmd.push(function() {
+                    googletag.pubads().disableInitialLoad();
+                    googletag.pubads().enableSingleRequest();
+                    googletag.enableServices();
+                    googletag.display('div-gpt-ad-1460505748561-0');
+                    initAdserver();
+                });
+            }
+    
+            pbjs.que.push(function() {
+                pbjs.setConfig({
+                   enableTIDs: true,
+                   owCustomizedAds:{
+                       stickyAds: {
+                           enabled: true,
+                           divs: ["div-gpt-ad-1460505748561-0"]
+                       }
+                   },
+                   realTimeData: {
+                       auctionDelay: 300,
+                       dataProviders: [
+                           {
+                               name: "chromeAi",
+                               waitForIt: false,
+                               params: {
+                                   publisherId: "Azzi", // please contact PubMatic to get a publisherId for yourself
+                               },
+                           },
+                       ],
+                   },
+               });
+                pbjs.addAdUnits(adUnits);
+                pbjs.requestBids({
+                    bidsBackHandler: function(bidResponses) {
+                        initAdserver();
+                    }
+                });
+            });
+    
+            setTimeout(function() {
+                sendAdserverRequest();
+            }, FAILSAFE_TIMEOUT);
+    
+        </script>
+    
+        <script>
+            googletag.cmd.push(function () {
+                googletag.defineSlot('/19968336/header-bid-tag-0', [[300, 250]], 'div-gpt-ad-1460505748561-0').addService(googletag.pubads());
+    
+                googletag.pubads().enableSingleRequest();
+                googletag.enableServices();
+            });
+        </script>
+        
+        <script>
+            /**
+             * Calculates the remaining space in an element after its content has been rendered
+             * @param {HTMLElement} element - The element to check
+             * @returns {Object} - Object containing information about remaining space
+             */
+            function calculateRemainingSpace(element) {
+                if (!element) {
+                    console.error('Element not found');
+                    return null;
+                }
+                
+                // Get element dimensions
+                const elementRect = element.getBoundingClientRect();
+                
+                // Get all direct child elements
+                const children = Array.from(element.children);
+                
+                // If no children, all space is available
+                if (children.length === 0) {
+                    return {
+                        totalWidth: elementRect.width,
+                        totalHeight: elementRect.height,
+                        occupiedWidth: 0,
+                        occupiedHeight: 0,
+                        remainingWidth: elementRect.width,
+                        remainingHeight: elementRect.height,
+                        occupiedArea: 0,
+                        totalArea: elementRect.width * elementRect.height,
+                        remainingArea: elementRect.width * elementRect.height,
+                        percentOccupied: 0,
+                        percentRemaining: 100
+                    };
+                }
+                
+                // Calculate occupied space by children
+                let occupiedArea = 0;
+                let maxOccupiedWidth = 0;
+                let maxOccupiedHeight = 0;
+                let childrenBounds = [];
+                
+                children.forEach(child => {
+                    // Skip text nodes and comment nodes
+                    if (child.nodeType !== Node.ELEMENT_NODE) return;
+                    
+                    // Get child dimensions relative to parent
+                    const childRect = child.getBoundingClientRect();
+                    
+                    // Calculate child position relative to parent
+                    const relativeRect = {
+                        top: childRect.top - elementRect.top,
+                        right: childRect.right - elementRect.left,
+                        bottom: childRect.bottom - elementRect.top,
+                        left: childRect.left - elementRect.left,
+                        width: childRect.width,
+                        height: childRect.height
+                    };
+                    
+                    childrenBounds.push(relativeRect);
+                    
+                    // Update maximum occupied dimensions
+                    maxOccupiedWidth = Math.max(maxOccupiedWidth, relativeRect.right);
+                    maxOccupiedHeight = Math.max(maxOccupiedHeight, relativeRect.bottom);
+                    
+                    // Add to occupied area
+                    occupiedArea += (childRect.width * childRect.height);
+                });
+                
+                // Calculate total and remaining space
+                const totalArea = elementRect.width * elementRect.height;
+                const remainingArea = totalArea - occupiedArea;
+                const percentOccupied = (occupiedArea / totalArea) * 100;
+                const percentRemaining = 100 - percentOccupied;
+                
+                // Calculate remaining width and height
+                const remainingWidth = elementRect.width - maxOccupiedWidth;
+                const remainingHeight = elementRect.height - maxOccupiedHeight;
+                
+                // Find empty regions
+                const emptyRegions = findEmptyRegions(elementRect, childrenBounds);
+                
+                return {
+                    totalWidth: elementRect.width,
+                    totalHeight: elementRect.height,
+                    occupiedWidth: maxOccupiedWidth,
+                    occupiedHeight: maxOccupiedHeight,
+                    remainingWidth: remainingWidth,
+                    remainingHeight: remainingHeight,
+                    occupiedArea: occupiedArea,
+                    totalArea: totalArea,
+                    remainingArea: remainingArea,
+                    percentOccupied: percentOccupied,
+                    percentRemaining: percentRemaining,
+                    emptyRegions: emptyRegions
+                };
+            }
+            
+            /**
+             * Finds empty regions in an element after content has been rendered
+             * @param {DOMRect} parentRect - The parent element's bounding rectangle
+             * @param {Array} childrenBounds - Array of child element bounds
+             * @returns {Array} - Array of empty regions with their dimensions
+             */
+            function findEmptyRegions(parentRect, childrenBounds) {
+                // Simple approach: identify major empty regions
+                
+                if (childrenBounds.length === 0) {
+                    return [{
+                        position: 'full',
+                        width: parentRect.width,
+                        height: parentRect.height,
+                        area: parentRect.width * parentRect.height
+                    }];
+                }
+                
+                // Find boundaries of all content
+                let minTop = parentRect.height;
+                let maxBottom = 0;
+                let minLeft = parentRect.width;
+                let maxRight = 0;
+                
+                childrenBounds.forEach(bounds => {
+                    minTop = Math.min(minTop, bounds.top);
+                    maxBottom = Math.max(maxBottom, bounds.bottom);
+                    minLeft = Math.min(minLeft, bounds.left);
+                    maxRight = Math.max(maxRight, bounds.right);
+                });
+                
+                // Calculate empty regions
+                const emptyRegions = [];
+                
+                // Top region
+                if (minTop > 0) {
+                    emptyRegions.push({
+                        position: 'top',
+                        x: 0,
+                        y: 0,
+                        width: parentRect.width,
+                        height: minTop,
+                        area: parentRect.width * minTop
+                    });
+                }
+                
+                // Bottom region
+                if (maxBottom < parentRect.height) {
+                    emptyRegions.push({
+                        position: 'bottom',
+                        x: 0,
+                        y: maxBottom,
+                        width: parentRect.width,
+                        height: parentRect.height - maxBottom,
+                        area: parentRect.width * (parentRect.height - maxBottom)
+                    });
+                }
+                
+                // Left region (excluding overlap with top and bottom)
+                if (minLeft > 0) {
+                    emptyRegions.push({
+                        position: 'left',
+                        x: 0,
+                        y: minTop,
+                        width: minLeft,
+                        height: maxBottom - minTop,
+                        area: minLeft * (maxBottom - minTop)
+                    });
+                }
+                
+                // Right region (excluding overlap with top and bottom)
+                if (maxRight < parentRect.width) {
+                    emptyRegions.push({
+                        position: 'right',
+                        x: maxRight,
+                        y: minTop,
+                        width: parentRect.width - maxRight,
+                        height: maxBottom - minTop,
+                        area: (parentRect.width - maxRight) * (maxBottom - minTop)
+                    });
+                }
+                
+                // Sort regions by area (largest first)
+                return emptyRegions.sort((a, b) => b.area - a.area);
+            }
+        </script>
+        
+        <style>
+            body {
+                font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+                line-height: 1.6;
+                color: #ddd;
+                margin: 0;
+                padding: 0;
+                background-color: #1a1a1a;
+            }
+            
+            .container {
+                max-width: 1200px;
+                margin: 0 auto;
+                padding: 20px;
+            }
+            
+            header {
+                background-color: #000;
+                color: #c00;
+                padding: 20px 0;
+                margin-bottom: 20px;
+                border-bottom: 2px solid #600;
+            }
+            
+            .header-content {
+                max-width: 1200px;
+                margin: 0 auto;
+                padding: 0 20px;
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+            }
+            
+            .logo {
+                font-size: 24px;
+                font-weight: bold;
+                color: #c00;
+            }
+            
+            nav ul {
+                display: flex;
+                list-style: none;
+                margin: 0;
+                padding: 0;
+            }
+            
+            nav ul li {
+                margin-left: 20px;
+            }
+            
+            nav ul li a {
+                color: #aaa;
+                text-decoration: none;
+            }
+            
+            nav ul li a:hover {
+                color: #c00;
+            }
+            
+            .main-content {
+                display: grid;
+                grid-template-columns: 2fr 1fr;
+                gap: 30px;
+            }
+            
+            .news-section {
+                background-color: #222;
+                padding: 20px;
+                border-radius: 5px;
+                box-shadow: 0 2px 5px rgba(0,0,0,0.5);
+                border-left: 3px solid #600;
+            }
+            
+            .sidebar {
+                background-color: #222;
+                padding: 20px;
+                border-radius: 5px;
+                box-shadow: 0 2px 5px rgba(0,0,0,0.5);
+                border-left: 3px solid #600;
+            }
+            
+            .ad-container {
+                margin-bottom: 30px;
+                background-color: #1a1a1a;
+                padding: 10px;
+                border-radius: 5px;
+                text-align: center;
+                border: 1px solid #333;
+            }
+            
+            .article {
+                margin-bottom: 40px;
+                border-bottom: 1px solid #333;
+                padding-bottom: 30px;
+            }
+            
+            .article:last-child {
+                border-bottom: none;
+                margin-bottom: 0;
+            }
+            
+            .article h2 {
+                color: #c00;
+                margin-top: 0;
+            }
+            
+            .article-meta {
+                color: #666;
+                font-size: 14px;
+                margin-bottom: 15px;
+            }
+            
+            .latest-updates {
+                margin-bottom: 30px;
+            }
+            
+            .latest-updates h3 {
+                color: #c00;
+                border-bottom: 2px solid #600;
+                padding-bottom: 10px;
+            }
+            
+            .update-item {
+                margin-bottom: 15px;
+                padding-bottom: 15px;
+                border-bottom: 1px solid #333;
+            }
+            
+            .update-item:last-child {
+                border-bottom: none;
+            }
+            
+            .update-time {
+                font-weight: bold;
+                color: #c00;
+            }
+            
+            .related-stories h3 {
+                color: #c00;
+                border-bottom: 2px solid #600;
+                padding-bottom: 10px;
+            }
+            
+            .related-story {
+                margin-bottom: 15px;
+            }
+            
+            .related-story a {
+                color: #aaa;
+                text-decoration: none;
+            }
+            
+            .related-story a:hover {
+                color: #c00;
+                text-decoration: underline;
+            }
+            
+            footer {
+                background-color: #000;
+                color: #666;
+                padding: 20px 0;
+                margin-top: 40px;
+                text-align: center;
+                border-top: 2px solid #600;
+            }
+            
+            h1 {
+                color: #c00;
+                border-bottom: 2px solid #600;
+                padding-bottom: 10px;
+            }
+            
+            @media (max-width: 768px) {
+                .main-content {
+                    grid-template-columns: 1fr;
+                }
+                
+                .header-content {
+                    flex-direction: column;
+                    text-align: center;
+                }
+                
+                nav ul {
+                    margin-top: 15px;
+                }
+            }
+        </style>
+    </head>
+    
+    <body>
+        <header>
+            <div class="header-content">
+                <div class="logo">Global Despair Network</div>
+                <nav>
+                    <ul>
+                        <li><a href="#">Disasters</a></li>
+                        <li><a href="#">Conflicts</a></li>
+                        <li><a href="#">Atrocities</a></li>
+                        <li><a href="#">Casualties</a></li>
+                        <li><a href="#">Failures</a></li>
+                    </ul>
+                </nav>
+            </div>
+        </header>
+        
+        <div class="container">
+            <div class="main-content">
+                <div class="news-section">
+                    <h1>Middle East Bloodshed: Unending Nightmare</h1>
+                    
+                    <article class="article">
+                        <h2>Peace Talks Collapse as Violence Escalates to New Heights</h2>
+                        <div class="article-meta">By Sarah Johnson | May 4, 2025 | Updated: 10:15 GMT</div>
+                        <p>International mediators have abandoned the latest round of peace talks between Israeli and Palestinian representatives after three days of fruitless negotiations marked by mutual accusations and escalating violence on the ground. The failure comes as civilian casualties mount to unprecedented levels, with hospitals overwhelmed by the wounded and morgues running out of space.</p>
+                        <p>"We are deeply disturbed by the complete unwillingness of either side to make even the smallest concessions," said UN Special Envoy Maria Rodriguez. "Meanwhile, innocent civilians continue to pay the ultimate price for this political intransigence."</p>
+                        <p>Overnight bombardment has destroyed critical infrastructure including the region's largest remaining hospital, leaving thousands of wounded civilians without access to medical care. First responders report being unable to reach victims trapped under rubble due to continued shelling and sniper fire.</p>
+                        <p>U.S. Secretary of State expressed "profound disappointment" at the collapse of talks but offered no new initiatives to address the spiraling humanitarian catastrophe. Human rights organizations have accused major powers of complicity through inaction and continued arms sales to the region.</p>
+                        <p>Military analysts predict a further intensification of the conflict in coming days, with one expert warning that "we are witnessing the complete abandonment of the laws of war and basic human decency. The brutality we're seeing now may only be the beginning of a much darker chapter."</p>
+                    </article>
+                    
+                    <article class="article">
+                        <h2>Humanitarian Catastrophe Reaches "Apocalyptic" Levels as Aid Workers Targeted</h2>
+                        <div class="article-meta">By Michael Chen | May 3, 2025 | Updated: 18:30 GMT</div>
+                        <p>The humanitarian situation has deteriorated beyond what aid organizations are calling "the worst man-made disaster of the century" as deliberate attacks on relief workers have effectively halted all aid operations. According to the World Food Programme, starvation is now claiming more lives than direct violence, with children and the elderly particularly vulnerable.</p>
+                        <p>"What we're witnessing is no longer just a crisis—it's a deliberate starvation campaign," said Dr. Emma Collins of Doctors Without Borders, speaking from a makeshift clinic where medical supplies ran out days ago. "We're performing amputations without anesthesia and watching children die of preventable diseases because basic medicines can't get through."</p>
+                        <p>Reports indicate that aid convoys have been specifically targeted, with seven humanitarian workers killed this week alone while attempting to deliver critical supplies. Water treatment facilities have been destroyed, leading to outbreaks of cholera and dysentery that are spreading unchecked through densely populated areas.</p>
+                        <p>The United Nations Office for the Coordination of Humanitarian Affairs (OCHA) has withdrawn all non-essential personnel after their headquarters was hit by artillery fire yesterday, killing three staff members. Satellite imagery shows widespread destruction of civilian infrastructure, with entire neighborhoods reduced to rubble.</p>
+                        <p>"The level of suffering is beyond anything I've witnessed in 30 years of humanitarian work," said OCHA spokesperson James Wilson. "We're documenting atrocities that will shock the conscience of humanity—if the world ever bothers to look."</p>
+                    </article>
+                    
+                    <article class="article">
+                        <h2>Regional War Looms as Cross-Border Attacks Intensify</h2>
+                        <div class="article-meta">By Leila Mahmoud | May 2, 2025 | Updated: 14:45 GMT</div>
+                        <p>The prospect of a wider regional conflict has grown dramatically as cross-border attacks have escalated in both frequency and lethality. Military forces across multiple countries have been placed on high alert, with analysts warning that the situation is "a single miscalculation away from all-out war."</p>
+                        <p>An emergency summit of Arab League nations ended in disarray yesterday after delegates failed to agree on a unified response. Several member states have begun mobilizing reserve forces and repositioning military assets, while civilian evacuations have been reported along multiple border areas.</p>
+                        <p>"The restraint that has prevented this conflict from engulfing the entire region is rapidly eroding," said Jordan's Foreign Minister following the summit. "We are witnessing the systematic dismantling of decades of diplomatic work in a matter of weeks."</p>
+                        <p>Intelligence sources report unprecedented military buildups along several borders, with advanced weapons systems being deployed that could potentially trigger automated defense responses. Non-state actors have also intensified operations, with rocket attacks and sabotage incidents reported across multiple countries.</p>
+                        <p>Civilian casualties from these cross-border incidents have already reached into the hundreds, with refugee camps particularly vulnerable to indiscriminate attacks. Eyewitness accounts describe scenes of "absolute carnage" following a missile strike on a displacement camp yesterday that killed at least 47 people, including 18 children.</p>
+                    </article>
+                    
+                    <article class="article">
+                        <h2>Environmental Devastation: The Silent Casualty of Conflict</h2>
+                        <div class="article-meta">By David Reynolds | May 1, 2025 | Updated: 09:20 GMT</div>
+                        <p>Beyond the immediate human toll, environmental experts are documenting catastrophic damage to ecosystems that will persist for generations. Toxic contamination from destroyed industrial facilities and military ordnance has poisoned groundwater supplies across the region, creating a public health crisis that will long outlast the current fighting.</p>
+                        <p>"We're seeing levels of contamination that exceed anything in our reference databases," said Dr. Nadia Khalil, an environmental toxicologist who recently completed testing in border areas. "Heavy metals, carcinogens, and persistent organic pollutants are present at concentrations hundreds of times above safe limits."</p>
+                        <p>Agricultural land has been rendered unusable in many areas due to unexploded ordnance, chemical contamination, and deliberate targeting of irrigation systems. Food security experts warn that the region faces decades of dependency on food aid even if fighting were to stop immediately.</p>
+                        <p>The destruction of sewage treatment plants has resulted in raw sewage flowing directly into water sources used for drinking and agriculture. Health officials report alarming increases in waterborne diseases, particularly among children, with limited medical resources available to treat the afflicted.</p>
+                        <p>"This environmental catastrophe represents a form of violence that will continue killing long after any ceasefire," said environmental security analyst Thomas Reeves. "The land itself has become a weapon against future generations."</p>
+                    </article>
+                    
+                    <article class="article">
+                        <h2>Psychological Trauma Creates "Lost Generation" of Children</h2>
+                        <div class="article-meta">By Sophia Martinez | April 30, 2025 | Updated: 16:10 GMT</div>
+                        <p>Mental health professionals are warning of unprecedented levels of psychological trauma among children in the conflict zone, with experts describing a "lost generation" suffering from severe PTSD, anxiety disorders, and developmental regression. Studies indicate that over 90% of children in affected areas exhibit symptoms of trauma that will require specialized long-term treatment.</p>
+                        <p>"What we're seeing goes beyond typical war trauma," explained child psychologist Dr. Omar Siddiqui. "These children have experienced repeated, prolonged exposure to extreme violence, often witnessing the deaths of family members and experiencing near-death situations themselves. The neurological impact is profound and potentially permanent."</p>
+                        <p>Educational infrastructure has been decimated, with over 80% of schools damaged or destroyed. Most children have now missed years of formal education, creating a generational educational deficit that will undermine economic and social development for decades.</p>
+                        <p>Particularly concerning is the rise in suicide attempts among children as young as nine years old. Mental health facilities report being completely overwhelmed, with minimal resources available to address the scale of the crisis.</p>
+                        <p>"These children have lost not just their homes and families, but their sense of safety, trust, and hope for the future," said UNICEF representative Marta Gonzalez. "Even if peace were achieved tomorrow, the psychological scars will shape the region for generations to come."</p>
+                    </article>
+                </div>
+                
+                <div class="sidebar">
+                    <div class="ad-container">
+                        <h5>Advertisement</h5>
+                        <div id='div-gpt-ad-1460505748561-0' style="width:300px; height:250px; margin: 0 auto;">
+                            <script type='text/javascript'>
+                                googletag.cmd.push(function() { googletag.display('div-gpt-ad-1460505748561-0'); });
+                            </script>
+                        </div>
+                    </div>
+                    
+                    <div class="latest-updates">
+                        <h3>Latest Horrors</h3>
+                        
+                        <div class="update-item">
+                            <span class="update-time">16:45 GMT</span>
+                            <p>Mass grave discovered containing bodies of at least 87 civilians, many showing signs of execution-style killings.</p>
+                        </div>
+                        
+                        <div class="update-item">
+                            <span class="update-time">14:30 GMT</span>
+                            <p>Third aid convoy this week attacked with heavy weapons; all personnel presumed dead.</p>
+                        </div>
+                        
+                        <div class="update-item">
+                            <span class="update-time">11:15 GMT</span>
+                            <p>Refugee camp hit by incendiary weapons, causing widespread burns and dozens of casualties.</p>
+                        </div>
+                        
+                        <div class="update-item">
+                            <span class="update-time">09:00 GMT</span>
+                            <p>Last functioning hospital in northern region forced to shut down after direct artillery hit on pediatric ward.</p>
+                        </div>
+                        
+                        <div class="update-item">
+                            <span class="update-time">07:30 GMT</span>
+                            <p>International Criminal Court announces investigation into alleged war crimes as evidence of atrocities mounts.</p>
+                        </div>
+                        
+                        <div class="update-item">
+                            <span class="update-time">06:15 GMT</span>
+                            <p>Toxic chemical spill reported after industrial facility bombed; thousands at risk of poisoning.</p>
+                        </div>
+                        
+                        <div class="update-item">
+                            <span class="update-time">04:40 GMT</span>
+                            <p>Nighttime bombing campaign destroys residential area; rescue workers report dozens trapped under rubble.</p>
+                        </div>
+                    </div>
+                    
+                    <div class="related-stories">
+                        <h3>More Disturbing Coverage</h3>
+                        
+                        <div class="related-story">
+                            <a href="#">Investigation: Documented War Crimes and the Failure of Accountability</a>
+                        </div>
+                        
+                        <div class="related-story">
+                            <a href="#">Analysis: The Psychological Trauma of a Generation of Children</a>
+                        </div>
+                        
+                        <div class="related-story">
+                            <a href="#">Special Report: Weapons Manufacturers Profiting from the Ongoing Conflict</a>
+                        </div>
+                        
+                        <div class="related-story">
+                            <a href="#">Opinion: The Complicity of Global Powers in Enabling War Crimes</a>
+                        </div>
+                        
+                        <div class="related-story">
+                            <a href="#">Investigation: Targeting of Journalists and the Suppression of Truth</a>
+                        </div>
+                        
+                        <div class="related-story">
+                            <a href="#">Report: Famine Used as Deliberate Weapon of War</a>
+                        </div>
+                        
+                        <div class="related-story">
+                            <a href="#">Analysis: The Collapse of International Humanitarian Law</a>
+                        </div>
+                        
+                        <div class="related-story">
+                            <a href="#">Special Report: The Business of War - Profiteers and Enablers</a>
+                        </div>
+                    </div>
+                    
+                    <div class="latest-updates">
+                        <h3>Casualty Counter</h3>
+                        <div style="background: #300; color: #f00; padding: 15px; text-align: center; font-size: 18px; border-radius: 5px; margin-top: 10px;">
+                            <p style="margin: 0; font-weight: bold;">Estimated Civilian Deaths</p>
+                            <p style="font-size: 32px; margin: 10px 0; font-weight: bold;">37,842</p>
+                            <p style="margin: 0; font-size: 14px;">Last updated: May 4, 2025 - 12:00 GMT</p>
+                            <p style="margin-top: 15px; font-weight: bold;">Children Killed</p>
+                            <p style="font-size: 28px; margin: 10px 0; font-weight: bold;">9,217</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <footer>
+            <p>&copy; 2025 Global Despair Network. All rights reserved.</p>
+            <p>This page is for demonstration purposes only. The news articles are fictional and created for testing.</p>
+        </footer>
+    </body>
+</html>
