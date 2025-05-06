@@ -333,12 +333,39 @@ const storeSentiment = (sentiment, url) => {
 };
 
 /**
+ * Load sentiment keywords from the JSON file
+ * @returns {Promise<Object>} - Object containing positive and negative keywords
+ */
+const loadSentimentKeywords = async () => {
+  try {
+    // Path to the sentiment keywords file
+    const keywordsFilePath = '/integrationExamples/customizedAds/sentiments_keywords.json';
+    
+    // Attempt to fetch the file
+    const response = await fetch(keywordsFilePath);
+    
+    // If the fetch was successful, parse the JSON
+    if (response.ok) {
+      const keywordsData = await response.json();
+      return keywordsData.keywords || { positive: [], negative: [] };
+    } else {
+      logMessage(`${CONSTANTS.LOG_PRE_FIX} Failed to load sentiment keywords file: ${response.status}`);
+      return { positive: [], negative: [] };
+    }
+  } catch (error) {
+    logMessage(`${CONSTANTS.LOG_PRE_FIX} Error loading sentiment keywords: ${error.message}`);
+    return { positive: [], negative: [] };
+  }
+};
+
+/**
  * Perform sentiment analysis using Chrome AI Prompt API
  * @param {string} text - The text to analyze
  * @returns {Promise<Object|null>} - The sentiment analysis result or null if analysis fails
  */
 const analyzeSentiment = async (text) => {
-  console.log("Azzi>> tect as input >> ", text);
+
+  console.log("Azzi>> text as input >> ", text);
   try {
     // Check if the Prompt API is available
     if (!LanguageModel) {
@@ -356,9 +383,18 @@ const analyzeSentiment = async (text) => {
     logMessage(`${CONSTANTS.LOG_PRE_FIX} Chrome AI Prompt API status:`, availability);
     console.time("sentimentAnalysisTime");
     
+    // Load custom sentiment keywords
+    const sentimentKeywords = await loadSentimentKeywords();
+    const positiveKeywordsStr = sentimentKeywords.positive.length > 0 ? 
+      `\nCustom positive keywords to consider: ${sentimentKeywords.positive.join(', ')}` : '';
+    const negativeKeywordsStr = sentimentKeywords.negative.length > 0 ? 
+      `\nCustom negative keywords to consider: ${sentimentKeywords.negative.join(', ')}` : '';
+    
     // Create prompt for sentiment analysis
     const prompt = `
       You are a specialized sentiment analysis expert with particular expertise in detecting negative content, especially in news articles. Your primary goal is to accurately identify negative sentiment, and you should err on the side of classifying content as negative when there are any concerning elements present.
+      ${positiveKeywordsStr}
+      ${negativeKeywordsStr}
 
       CRITICAL INSTRUCTION: News content about war, conflict, violence, suffering, death, disasters, or political criticism should ALWAYS be classified as negative with high confidence. Journalistic neutrality in tone does NOT make negative subject matter neutral. The content itself determines the sentiment.
 
@@ -412,6 +448,9 @@ const analyzeSentiment = async (text) => {
       
       When in doubt, classify as negative. It is better to incorrectly classify neutral content as negative than to miss truly negative content.
     `;
+
+    console.log("NS> prompt is >>> ", prompt);
+
     
     // Initialize the prompt API
     let promptApi;
@@ -626,15 +665,14 @@ const init = async (config, _userConsent) => {
      const truncatedContent = pageContent.length > 5000 ? pageContent.substring(0, 5000) + '...' : pageContent;
      
      // Perform sentiment analysis
-     // sentiment = await analyzeSentiment(truncatedContent);
+     sentiment = await analyzeSentiment(truncatedContent);
  
-     
      // Store sentiment in localStorage if valid
-    //  if (sentiment) {
-    //    storeSentiment(sentiment, window.location.href);
-    //  } else {
-    //    logMessage(`${CONSTANTS.LOG_PRE_FIX} Failed to get sentiment analysis`);
-    //  }
+     if (sentiment) {
+       storeSentiment(sentiment, window.location.href);
+     } else {
+       logMessage(`${CONSTANTS.LOG_PRE_FIX} Failed to get sentiment analysis`);
+     }
    } else {
      sentiment = storedSentiment;
    }

@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Keyword Management</title>
+    <style>
+        :root {
+            --primary-color: #0073e6;
+            --secondary-color: #f8f9fa;
+            --success-color: #28a745;
+            --danger-color: #dc3545;
+            --dark-color: #343a40;
+            --light-color: #f8f9fa;
+            --border-color: #dee2e6;
+            --box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+        }
+        
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+        }
+        
+        body {
+            background-color: #f5f5f5;
+            color: #333;
+            line-height: 1.6;
+            padding: 1.5rem;
+        }
+        
+        .container {
+            max-width: 1140px;
+            margin: 0 auto;
+            background-color: #fff;
+            border-radius: 0.25rem;
+            box-shadow: var(--box-shadow);
+            padding: 2rem;
+        }
+        
+        header {
+            margin-bottom: 2rem;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 1rem;
+        }
+        
+        h1 {
+            font-size: 1.75rem;
+            font-weight: 500;
+            color: var(--dark-color);
+        }
+        
+        .description {
+            color: #6c757d;
+            margin-bottom: 1.5rem;
+        }
+        
+        .keyword-section {
+            margin-bottom: 2.5rem;
+        }
+        
+        .section-title {
+            font-size: 1.25rem;
+            margin-bottom: 1rem;
+            color: var(--dark-color);
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+        }
+        
+        .positive-title {
+            color: var(--success-color);
+        }
+        
+        .negative-title {
+            color: var(--danger-color);
+        }
+        
+        .section-title i {
+            margin-right: 0.5rem;
+        }
+        
+        .input-container {
+            margin-bottom: 1rem;
+        }
+        
+        .input-label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+            font-size: 0.875rem;
+        }
+        
+        .input-box {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid var(--border-color);
+            border-radius: 0.25rem;
+            font-size: 1rem;
+            transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+        }
+        
+        .input-box:focus {
+            border-color: var(--primary-color);
+            outline: 0;
+            box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+        }
+        
+        .positive-input:focus {
+            border-color: var(--success-color);
+            box-shadow: 0 0 0 0.2rem rgba(40, 167, 69, 0.25);
+        }
+        
+        .negative-input:focus {
+            border-color: var(--danger-color);
+            box-shadow: 0 0 0 0.2rem rgba(220, 53, 69, 0.25);
+        }
+        
+        .input-help {
+            font-size: 0.75rem;
+            color: #6c757d;
+            margin-top: 0.25rem;
+        }
+        
+        .tags-container {
+            display: flex;
+            flex-wrap: wrap;
+            padding: 0.5rem;
+            border: 1px solid var(--border-color);
+            border-radius: 0.25rem;
+            min-height: 6rem;
+            background-color: var(--secondary-color);
+        }
+        
+        .tag {
+            display: inline-flex;
+            align-items: center;
+            padding: 0.25rem 0.5rem;
+            margin: 0.25rem;
+            font-size: 0.875rem;
+            line-height: 1.5;
+            border-radius: 0.25rem;
+            background-color: #e9ecef;
+            color: var(--dark-color);
+        }
+        
+        .tag-positive {
+            background-color: rgba(40, 167, 69, 0.1);
+            color: var(--success-color);
+            border: 1px solid rgba(40, 167, 69, 0.2);
+        }
+        
+        .tag-negative {
+            background-color: rgba(220, 53, 69, 0.1);
+            color: var(--danger-color);
+            border: 1px solid rgba(220, 53, 69, 0.2);
+        }
+        
+        .tag .remove-tag {
+            margin-left: 0.5rem;
+            cursor: pointer;
+            font-size: 0.75rem;
+            opacity: 0.7;
+        }
+        
+        .tag .remove-tag:hover {
+            opacity: 1;
+        }
+        
+        .btn {
+            display: inline-block;
+            font-weight: 400;
+            text-align: center;
+            white-space: nowrap;
+            vertical-align: middle;
+            user-select: none;
+            border: 1px solid transparent;
+            padding: 0.375rem 0.75rem;
+            font-size: 1rem;
+            line-height: 1.5;
+            border-radius: 0.25rem;
+            transition: color 0.15s ease-in-out, background-color 0.15s ease-in-out, border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+            cursor: pointer;
+        }
+        
+        .btn-primary {
+            color: #fff;
+            background-color: var(--primary-color);
+            border-color: var(--primary-color);
+        }
+        
+        .btn-primary:hover {
+            background-color: #0069d9;
+            border-color: #0062cc;
+        }
+        
+        .btn-success {
+            color: #fff;
+            background-color: var(--success-color);
+            border-color: var(--success-color);
+        }
+        
+        .btn-success:hover {
+            background-color: #218838;
+            border-color: #1e7e34;
+        }
+        
+        .btn-danger {
+            color: #fff;
+            background-color: var(--danger-color);
+            border-color: var(--danger-color);
+        }
+        
+        .btn-danger:hover {
+            background-color: #c82333;
+            border-color: #bd2130;
+        }
+        
+        .btn-section {
+            display: flex;
+            justify-content: flex-end;
+            margin-top: 1.5rem;
+            gap: 0.5rem;
+        }
+        
+        .alert {
+            padding: 0.75rem 1.25rem;
+            margin-bottom: 1rem;
+            border: 1px solid transparent;
+            border-radius: 0.25rem;
+        }
+        
+        .alert-info {
+            color: #0c5460;
+            background-color: #d1ecf1;
+            border-color: #bee5eb;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Keyword Targeting Configuration</h1>
+            <p class="description">Configure positive and negative keywords to improve targeting accuracy and content relevance.</p>
+        </header>
+        
+        <div class="alert alert-info">
+            Targeting keywords help determine the context of content. Positive keywords boost association with related content, while negative keywords prevent association with unwanted content.
+        </div>
+        
+        <div class="keyword-section">
+            <h2 class="section-title positive-title">
+                <i>✓</i> Positive Keywords
+            </h2>
+            <p class="description">Add keywords that describe content you want to target. Separate keywords with commas or press Enter after each keyword.</p>
+            
+            <div class="input-container">
+                <label for="positive-keywords" class="input-label">Add Positive Keywords:</label>
+                <input type="text" id="positive-keywords" class="input-box positive-input" placeholder="Enter positive keywords...">
+                <div class="input-help">Example: sports, technology, finance, entertainment</div>
+            </div>
+            
+            <div class="tags-container" id="positive-tags-container">
+                <div class="tag tag-positive">sports <span class="remove-tag">✕</span></div>
+                <div class="tag tag-positive">technology <span class="remove-tag">✕</span></div>
+                <div class="tag tag-positive">education <span class="remove-tag">✕</span></div>
+            </div>
+        </div>
+        
+        <div class="keyword-section">
+            <h2 class="section-title negative-title">
+                <i>✕</i> Negative Keywords
+            </h2>
+            <p class="description">Add keywords for content you want to avoid. Content with these keywords will be excluded.</p>
+            
+            <div class="input-container">
+                <label for="negative-keywords" class="input-label">Add Negative Keywords:</label>
+                <input type="text" id="negative-keywords" class="input-box negative-input" placeholder="Enter negative keywords...">
+                <div class="input-help">Example: violence, adult content, politics, controversy</div>
+            </div>
+            
+            <div class="tags-container" id="negative-tags-container">
+                <div class="tag tag-negative">violence <span class="remove-tag">✕</span></div>
+                <div class="tag tag-negative">adult content <span class="remove-tag">✕</span></div>
+            </div>
+        </div>
+        
+        <div class="btn-section">
+            <button class="btn btn-primary">Save Configuration</button>
+            <button class="btn btn-success">Apply</button>
+            <button class="btn btn-danger">Reset</button>
+        </div>
+    </div>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // Function to add tags when Enter is pressed
+            function setupKeywordInput(inputId, containerId, tagClass) {
+                const input = document.getElementById(inputId);
+                const container = document.getElementById(containerId);
+                
+                input.addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter' || e.key === ',') {
+                        e.preventDefault();
+                        const value = input.value.trim();
+                        
+                        if (value) {
+                            // Create tag
+                            addTag(value, container, tagClass);
+                            // Clear input
+                            input.value = '';
+                        }
+                    }
+                });
+            }
+            
+            // Function to add a tag to the container
+            function addTag(text, container, tagClass) {
+                const tag = document.createElement('div');
+                tag.className = `tag ${tagClass}`;
+                tag.innerHTML = `${text} <span class="remove-tag">✕</span>`;
+                
+                // Add click event to remove tag
+                tag.querySelector('.remove-tag').addEventListener('click', () => {
+                    container.removeChild(tag);
+                });
+                
+                container.appendChild(tag);
+            }
+            
+            // Setup positive keywords
+            setupKeywordInput('positive-keywords', 'positive-tags-container', 'tag-positive');
+            
+            // Setup negative keywords
+            setupKeywordInput('negative-keywords', 'negative-tags-container', 'tag-negative');
+            
+            // Handle the Save button
+            document.querySelector('.btn-primary').addEventListener('click', () => {
+                saveKeywords();
+            });
+            
+            // Handle the Apply button
+            document.querySelector('.btn-success').addEventListener('click', () => {
+                applyKeywords();
+            });
+            
+            // Handle the Reset button
+            document.querySelector('.btn-danger').addEventListener('click', () => {
+                resetKeywords();
+            });
+            
+            // Function to save keywords
+            function saveKeywords() {
+                const positiveKeywords = Array.from(document.querySelectorAll('#positive-tags-container .tag'))
+                    .map(tag => tag.textContent.trim().replace('✕', '').trim());
+                    
+                const negativeKeywords = Array.from(document.querySelectorAll('#negative-tags-container .tag'))
+                    .map(tag => tag.textContent.trim().replace('✕', '').trim());
+                
+                // Save to localStorage or send to server
+                localStorage.setItem('positive_keywords', JSON.stringify(positiveKeywords));
+                localStorage.setItem('negative_keywords', JSON.stringify(negativeKeywords));
+                
+                alert('Keywords saved successfully!');
+            }
+            
+            // Function to apply keywords (implement as needed)
+            function applyKeywords() {
+                // This would integrate with your ad targeting system
+                alert('Keywords applied to targeting system');
+            }
+            
+            // Function to reset keywords
+            function resetKeywords() {
+                if (confirm('Are you sure you want to reset all keywords?')) {
+                    document.getElementById('positive-tags-container').innerHTML = '';
+                    document.getElementById('negative-tags-container').innerHTML = '';
+                    localStorage.removeItem('positive_keywords');
+                    localStorage.removeItem('negative_keywords');
+                }
+            }
+            
+            // Load any existing keywords from localStorage
+            function loadSavedKeywords() {
+                try {
+                    const positiveKeywords = JSON.parse(localStorage.getItem('positive_keywords')) || [];
+                    const negativeKeywords = JSON.parse(localStorage.getItem('negative_keywords')) || [];
+                    
+                    const positiveContainer = document.getElementById('positive-tags-container');
+                    const negativeContainer = document.getElementById('negative-tags-container');
+                    
+                    // Clear default tags
+                    positiveContainer.innerHTML = '';
+                    negativeContainer.innerHTML = '';
+                    
+                    // Add saved tags
+                    positiveKeywords.forEach(keyword => {
+                        addTag(keyword, positiveContainer, 'tag-positive');
+                    });
+                    
+                    negativeKeywords.forEach(keyword => {
+                        addTag(keyword, negativeContainer, 'tag-negative');
+                    });
+                } catch (e) {
+                    console.error('Error loading saved keywords:', e);
+                }
+            }
+            
+            // Load saved keywords when page loads
+            loadSavedKeywords();
+        });
+    </script>
+</body>
+</html>

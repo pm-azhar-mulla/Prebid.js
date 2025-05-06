@@ -1,0 +1,623 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Create OpenWrap Profile</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+        }
+        
+        body {
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+            color: #333;
+        }
+        
+        .container {
+            max-width: 1100px;
+            margin: 0 auto;
+        }
+        
+        h1 {
+            font-size: 24px;
+            font-weight: 500;
+            color: #333;
+            margin-bottom: 20px;
+        }
+        
+        /* Tabs */
+        .tabs {
+            display: flex;
+            list-style: none;
+            padding: 0;
+            margin: 0 0 20px 0;
+            border-bottom: 1px solid #ddd;
+        }
+        
+        .tabs li {
+            margin-right: 5px;
+        }
+        
+        .tabs li a {
+            display: inline-block;
+            padding: 8px 15px;
+            text-decoration: none;
+            color: #0d6efd;
+            border-radius: 4px 4px 0 0;
+        }
+        
+        .tabs li a:hover {
+            background-color: #f0f0f0;
+        }
+        
+        .tabs li a.active {
+            background-color: #6c757d;
+            color: white;
+        }
+        
+        /* Sections */
+        .section {
+            background-color: #fff;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            margin-bottom: 20px;
+            overflow: hidden;
+        }
+        
+        .section-header {
+            background-color: #6c757d;
+            color: white;
+            padding: 10px 15px;
+            font-weight: 500;
+        }
+        
+        .section-body {
+            padding: 20px;
+        }
+        
+        /* Form Groups */
+        .form-group {
+            margin-bottom: 15px;
+            display: flex;
+            align-items: baseline;
+        }
+        
+        .form-group label {
+            width: 150px;
+            margin-right: 15px;
+            text-align: right;
+            font-weight: 500;
+        }
+        
+        .form-group label .required {
+            color: red;
+            margin-left: 3px;
+        }
+        
+        .form-control {
+            flex: 1;
+            max-width: 500px;
+            padding: 8px 12px;
+            border: 1px solid #ced4da;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        
+        .form-text {
+            margin-top: 5px;
+            font-size: 12px;
+            color: #6c757d;
+            margin-left: 165px;
+        }
+        
+        /* Radio buttons */
+        .radio-group {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .radio-option {
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+        }
+        
+        .radio-option input[type="radio"] {
+            margin-right: 8px;
+        }
+        
+        /* Buttons */
+        .btn-group {
+            margin-top: 5px;
+        }
+        
+        .btn {
+            display: inline-block;
+            padding: 6px 12px;
+            font-size: 14px;
+            font-weight: 400;
+            line-height: 1.5;
+            text-align: center;
+            vertical-align: middle;
+            cursor: pointer;
+            border: 1px solid transparent;
+            border-radius: 4px;
+            color: white;
+            background-color: #0d6efd;
+            margin-right: 5px;
+        }
+        
+        .btn:hover {
+            background-color: #0b5ed7;
+        }
+        
+        /* Select */
+        select.form-control {
+            -webkit-appearance: menulist;
+            appearance: menulist;
+        }
+        
+        /* Partners table */
+        .table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        
+        .table th, .table td {
+            padding: 10px;
+            border-bottom: 1px solid #dee2e6;
+            text-align: left;
+        }
+        
+        .table th {
+            background-color: #f8f9fa;
+            font-weight: 500;
+        }
+        
+        /* Info icon */
+        .info-icon {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background-color: #6c757d;
+            color: white;
+            text-align: center;
+            line-height: 16px;
+            font-size: 12px;
+            font-weight: bold;
+            margin-left: 5px;
+            cursor: help;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Create OpenWrap Profile</h1>
+        
+        <ul class="tabs">
+            <li><a href="#general" class="active">General</a></li>
+            <li><a href="#partners">Partners</a></li>
+            <li><a href="#prebid-modules">Prebid Modules</a></li>
+            <li><a href="#identity">Identity</a></li>
+            <li><a href="#consent">Consent</a></li>
+            <li><a href="#advanced">Advanced</a></li>
+            <li><a href="#custom-code">Custom Code</a></li>
+            <li><a href="#ab-testing">A/B Testing</a></li>
+        </ul>
+        
+        <!-- General Section -->
+        <div id="general" class="section">
+            <div class="section-header">General</div>
+            <div class="section-body">
+                <div class="form-group">
+                    <label for="profile-type">Profile Type <span class="required">*</span></label>
+                    <div class="btn-group">
+                        <button class="btn">OpenWrap</button>
+                        <button class="btn" style="background-color: #f8f9fa; color: #212529;">Identity</button>
+                        <button class="btn" style="background-color: #f8f9fa; color: #212529;">Prebid S2S</button>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="profile-name">Profile Name <span class="required">*</span></label>
+                    <input type="text" id="profile-name" class="form-control">
+                    <div class="form-text">100 characters left</div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="platform">Platform <span class="required">*</span></label>
+                    <div class="radio-group">
+                        <div class="radio-option">
+                            <input type="radio" id="web" name="platform" checked>
+                            <label for="web">Web</label>
+                        </div>
+                        <div class="radio-option">
+                            <input type="radio" id="amp" name="platform">
+                            <label for="amp">AMP</label>
+                        </div>
+                        <div class="radio-option">
+                            <input type="radio" id="ott" name="platform">
+                            <label for="ott">OTT/CTV</label>
+                        </div>
+                        <div class="radio-option">
+                            <input type="radio" id="mobile" name="platform">
+                            <label for="mobile">Mobile In-App</label>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="adserver">AdServer <span class="required">*</span></label>
+                    <select id="adserver" class="form-control">
+                        <option>DFP</option>
+                        <option>Other Ad Server</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="release-version">Release Version <span class="required">*</span></label>
+                    <select id="release-version" class="form-control">
+                        <option>VERIFIED - v28.6.0 (Prebid-v8.52.0)</option>
+                        <option>Other version</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="comment">Comment</label>
+                    <textarea id="comment" class="form-control" rows="4"></textarea>
+                    <div class="form-text">200 characters left</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Partners Section -->
+        <div id="partners" class="section">
+            <div class="section-header">Partners</div>
+            <div class="section-body">
+                <div class="form-group">
+                    <label for="partners-select">Partners <span class="required">*</span></label>
+                    <select id="partners-select" class="form-control">
+                        <option>PubMatic (PubMatic)</option>
+                        <option>Other Partner</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="auction-timeout">Auction Timeout (ms) <span class="required">*</span></label>
+                    <input type="text" id="auction-timeout" class="form-control" value="1000">
+                </div>
+                
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Account Name (Partner)</th>
+                            <th>Bidder Code</th>
+                            <th>Traffic Allocation (%) <span class="info-icon" title="Percentage of traffic to allocate to this partner">i</span></th>
+                            <th>Bid Adjustment (%) <span class="info-icon" title="Percentage to adjust bids by">i</span></th>
+                            <th>Path <span class="info-icon" title="Client-side or Server-side">i</span></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>PubMatic (PubMatic)</td>
+                            <td>pubmatic</td>
+                            <td><input type="text" class="form-control" value="100" style="max-width: 80px;"></td>
+                            <td><input type="text" class="form-control" value="0" style="max-width: 80px;"></td>
+                            <td>
+                                <label style="margin-right: 15px;">
+                                    <input type="radio" name="path" checked> Client-side
+                                </label>
+                                <label>
+                                    <input type="radio" name="path"> Server-side
+                                </label>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        
+        <!-- Advanced Section with Keywords -->
+        <div id="advanced" class="section" style="display: none;">
+            <div class="section-header">Advanced</div>
+            <div class="section-body">
+                <!-- Keywords section header -->
+                <h3 style="margin-bottom: 20px; border-bottom: 1px solid #dee2e6; padding-bottom: 10px;">Keyword Targeting</h3>
+                <p style="margin-bottom: 20px; color: #6c757d; font-size: 14px;">
+                    Configure keyword targeting to improve content relevance. Positive keywords boost association with related content, while negative keywords prevent association with unwanted content.
+                </p>
+                
+                <!-- Positive Keywords -->
+                <div style="margin-bottom: 30px;">
+                    <h4 style="margin-bottom: 15px; color: #28a745;">
+                        <i style="margin-right: 8px;">✓</i> Positive Keywords
+                    </h4>
+                    <p style="margin-bottom: 10px; color: #6c757d; font-size: 14px;">Add keywords that describe content you want to target. Separate keywords with commas or press Enter after each keyword.</p>
+                    
+                    <div class="form-group" style="display: block; margin-bottom: 10px;">
+                        <label for="positive-keywords" style="display: block; margin-bottom: 5px; text-align: left; width: 100%;">Add Positive Keywords:</label>
+                        <input type="text" id="positive-keywords" class="form-control" style="border-color: #28a745;" placeholder="Enter positive keywords...">
+                        <div style="font-size: 12px; color: #6c757d; margin-top: 5px;">Example: sports, technology, finance, entertainment</div>
+                    </div>
+                    
+                    <div style="display: flex; flex-wrap: wrap; padding: 10px; border: 1px solid #dee2e6; border-radius: 4px; min-height: 100px; background-color: #f8f9fa; margin-top: 10px;" id="positive-tags-container">
+                        <!-- Tags will be added here dynamically -->
+                    </div>
+                </div>
+                
+                <!-- Negative Keywords -->
+                <div style="margin-bottom: 30px;">
+                    <h4 style="margin-bottom: 15px; color: #dc3545;">
+                        <i style="margin-right: 8px;">✕</i> Negative Keywords
+                    </h4>
+                    <p style="margin-bottom: 10px; color: #6c757d; font-size: 14px;">Add keywords for content you want to avoid. Content with these keywords will be excluded.</p>
+                    
+                    <div class="form-group" style="display: block; margin-bottom: 10px;">
+                        <label for="negative-keywords" style="display: block; margin-bottom: 5px; text-align: left; width: 100%;">Add Negative Keywords:</label>
+                        <input type="text" id="negative-keywords" class="form-control" style="border-color: #dc3545;" placeholder="Enter negative keywords...">
+                        <div style="font-size: 12px; color: #6c757d; margin-top: 5px;">Example: violence, adult content, politics, controversy</div>
+                    </div>
+                    
+                    <div style="display: flex; flex-wrap: wrap; padding: 10px; border: 1px solid #dee2e6; border-radius: 4px; min-height: 100px; background-color: #f8f9fa; margin-top: 10px;" id="negative-tags-container">
+                        <!-- Tags will be added here dynamically -->
+                    </div>
+                </div>
+                
+                <!-- Keyword Actions -->
+                <div style="display: flex; justify-content: flex-end; margin-top: 20px;">
+                    <button class="btn" id="save-keywords" style="background-color: #28a745;">Save Keywords</button>
+                    <button class="btn" id="export-keywords" style="background-color: #0d6efd; margin-left: 10px;">Export to JSON</button>
+                    <button class="btn" id="reset-keywords" style="background-color: #dc3545; margin-left: 10px;">Reset Keywords</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Tab navigation
+        document.addEventListener('DOMContentLoaded', function() {
+            const tabs = document.querySelectorAll('.tabs a');
+            
+            tabs.forEach(tab => {
+                tab.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    
+                    // Remove active class from all tabs
+                    tabs.forEach(t => t.classList.remove('active'));
+                    
+                    // Add active class to clicked tab
+                    this.classList.add('active');
+                    
+                    // Show the corresponding section
+                    const targetId = this.getAttribute('href').substring(1);
+                    document.querySelectorAll('.section').forEach(section => {
+                        if (section.id === targetId) {
+                            section.style.display = 'block';
+                        } else {
+                            section.style.display = 'none';
+                        }
+                    });
+                });
+            });
+            
+            // Show the General tab by default
+            document.getElementById('general').style.display = 'block';
+            
+            // Add keyword functionality
+            setupKeywordFunctionality();
+        });
+        
+        // Function to setup keyword functionality
+        function setupKeywordFunctionality() {
+            // Function to add tags when Enter is pressed
+            function setupKeywordInput(inputId, containerId, tagClass) {
+                const input = document.getElementById(inputId);
+                const container = document.getElementById(containerId);
+                
+                if (!input || !container) return; // Safety check
+                
+                input.addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter' || e.key === ',') {
+                        e.preventDefault();
+                        const value = input.value.trim().replace(/,$/g, ''); // Remove trailing comma if any
+                        
+                        if (value) {
+                            // Create tag
+                            addTag(value, container, tagClass);
+                            // Clear input
+                            input.value = '';
+                        }
+                    }
+                });
+            }
+            
+            // Function to add a tag to the container
+            function addTag(text, container, tagClass) {
+                const tag = document.createElement('div');
+                tag.style.display = 'inline-flex';
+                tag.style.alignItems = 'center';
+                tag.style.padding = '5px 10px';
+                tag.style.margin = '5px';
+                tag.style.fontSize = '14px';
+                tag.style.borderRadius = '4px';
+                tag.style.cursor = 'default';
+                
+                if (tagClass === 'positive') {
+                    tag.style.backgroundColor = 'rgba(40, 167, 69, 0.1)';
+                    tag.style.color = '#28a745';
+                    tag.style.border = '1px solid rgba(40, 167, 69, 0.2)';
+                } else {
+                    tag.style.backgroundColor = 'rgba(220, 53, 69, 0.1)';
+                    tag.style.color = '#dc3545';
+                    tag.style.border = '1px solid rgba(220, 53, 69, 0.2)';
+                }
+                
+                tag.innerHTML = `${text} <span style="margin-left: 8px; cursor: pointer; font-size: 12px; opacity: 0.7;">✕</span>`;
+                
+                // Add click event to remove tag
+                tag.querySelector('span').addEventListener('click', () => {
+                    container.removeChild(tag);
+                });
+                
+                container.appendChild(tag);
+            }
+            
+            // Setup positive keywords
+            setupKeywordInput('positive-keywords', 'positive-tags-container', 'positive');
+            
+            // Setup negative keywords
+            setupKeywordInput('negative-keywords', 'negative-tags-container', 'negative');
+            
+            // Handle the Save Keywords button
+            const saveButton = document.getElementById('save-keywords');
+            if (saveButton) {
+                saveButton.addEventListener('click', () => {
+                    saveKeywords();
+                });
+            }
+            
+            // Handle the Export to JSON button
+            const exportButton = document.getElementById('export-keywords');
+            if (exportButton) {
+                exportButton.addEventListener('click', () => {
+                    exportKeywordsToJson();
+                });
+            }
+            
+            // Handle the Reset Keywords button
+            const resetButton = document.getElementById('reset-keywords');
+            if (resetButton) {
+                resetButton.addEventListener('click', () => {
+                    resetKeywords();
+                });
+            }
+            
+            // Function to save keywords
+            function saveKeywords() {
+                const positiveContainer = document.getElementById('positive-tags-container');
+                const negativeContainer = document.getElementById('negative-tags-container');
+                
+                if (!positiveContainer || !negativeContainer) return;
+                
+                const positiveKeywords = Array.from(positiveContainer.children)
+                    .map(tag => tag.textContent.trim().replace('✕', '').trim());
+                    
+                const negativeKeywords = Array.from(negativeContainer.children)
+                    .map(tag => tag.textContent.trim().replace('✕', '').trim());
+                
+                // Save to localStorage for demonstration
+                localStorage.setItem('positive_keywords', JSON.stringify(positiveKeywords));
+                localStorage.setItem('negative_keywords', JSON.stringify(negativeKeywords));
+                
+                alert('Keywords saved successfully!');
+            }
+            
+            // Function to export keywords to JSON file
+            function exportKeywordsToJson() {
+                const positiveContainer = document.getElementById('positive-tags-container');
+                const negativeContainer = document.getElementById('negative-tags-container');
+                
+                if (!positiveContainer || !negativeContainer) return;
+                
+                const positiveKeywords = Array.from(positiveContainer.children)
+                    .map(tag => tag.textContent.trim().replace('✕', '').trim());
+                    
+                const negativeKeywords = Array.from(negativeContainer.children)
+                    .map(tag => tag.textContent.trim().replace('✕', '').trim());
+                
+                // Create a data structure with profile information
+                const keywordsData = {
+                    profile: document.getElementById('profile-name')?.value || 'OpenWrap Profile',
+                    platform: document.querySelector('input[name="platform"]:checked')?.nextElementSibling?.textContent || 'Web',
+                    timestamp: new Date().toISOString(),
+                    keywords: {
+                        positive: positiveKeywords,
+                        negative: negativeKeywords
+                    }
+                };
+                
+                // Convert to JSON string with pretty printing
+                const jsonString = JSON.stringify(keywordsData, null, 2);
+                
+                // Set fixed filename
+                const fixedFilename = 'sentiments_keywords.json';
+                
+                // Create a blob 
+                const blob = new Blob([jsonString], {type: 'application/json'});
+                
+                // Use showSaveFilePicker if available (modern browsers)
+                if (window.showSaveFilePicker) {
+                    // Modern method with explicit save dialog
+                    const saveFile = async () => {
+                        try {
+                            const opts = {
+                                suggestedName: fixedFilename,
+                                types: [{
+                                    description: 'JSON Files',
+                                    accept: {'application/json': ['.json']}
+                                }]
+                            };
+                            
+                            const fileHandle = await window.showSaveFilePicker(opts);
+                            const writable = await fileHandle.createWritable();
+                            await writable.write(blob);
+                            await writable.close();
+                            
+                            alert('Keywords exported to sentiments_keywords.json file!');
+                        } catch (err) {
+                            // User might have cancelled
+                            if (err.name !== 'AbortError') {
+                                console.error('Error saving file:', err);
+                                alert('Error saving file: ' + err.message);
+                            }
+                        }
+                    };
+                    
+                    saveFile();
+                } else {
+                    // Fallback for browsers without showSaveFilePicker
+                    // Create URL and trigger download
+                    const url = URL.createObjectURL(blob);
+                    
+                    const downloadLink = document.createElement('a');
+                    downloadLink.href = url;
+                    downloadLink.download = fixedFilename;
+                    downloadLink.style.display = 'none';
+                    
+                    // Add link to body, click it, then remove
+                    document.body.appendChild(downloadLink);
+                    downloadLink.click();
+                    document.body.removeChild(downloadLink);
+                    
+                    // Release the URL object after download starts
+                    setTimeout(() => {
+                        URL.revokeObjectURL(url);
+                    }, 100);
+                    
+                    alert('Keywords exported to sentiments_keywords.json file!');
+                }
+            }
+            
+            // Function to reset keywords
+            function resetKeywords() {
+                const positiveContainer = document.getElementById('positive-tags-container');
+                const negativeContainer = document.getElementById('negative-tags-container');
+                
+                if (!positiveContainer || !negativeContainer) return;
+                
+                if (confirm('Are you sure you want to reset all keywords?')) {
+                    positiveContainer.innerHTML = '';
+                    negativeContainer.innerHTML = '';
+                    localStorage.removeItem('positive_keywords');
+                    localStorage.removeItem('negative_keywords');
+                }
+            }
+        }
+    </script>
+</body>
+</html>
