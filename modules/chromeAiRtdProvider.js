@@ -449,8 +449,9 @@ const analyzeSentiment = async (text) => {
       When in doubt, classify as negative. It is better to incorrectly classify neutral content as negative than to miss truly negative content.
     `;
 
-    console.log("NS> prompt is >>> ", prompt);
-
+    // console.log("NS> prompt is >>> ", prompt);
+    console.log("NS> Positive Keywords >>> ", sentimentKeywords.positive);
+    console.log("NS> Negative Keywords >>> ", sentimentKeywords.negative);
     
     // Initialize the prompt API
     let promptApi;

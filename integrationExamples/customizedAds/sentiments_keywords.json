@@ -1,16 +1,16 @@
 {
   "profile": "OpenWrap Profile",
   "platform": "Web",
-  "timestamp": "2025-05-06T09:46:20.023Z",
+  "timestamp": "2025-05-06T11:05:03.760Z",
   "keywords": {
     "positive": [
       "sports",
-      "finance",
-      "technology"
+      "finance"
     ],
     "negative": [
       "voilence",
-      "politics"
+      "politics",
+      "alcohol"
     ]
   }
 }
