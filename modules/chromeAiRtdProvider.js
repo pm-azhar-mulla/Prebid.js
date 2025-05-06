@@ -626,15 +626,15 @@ const init = async (config, _userConsent) => {
      const truncatedContent = pageContent.length > 5000 ? pageContent.substring(0, 5000) + '...' : pageContent;
      
      // Perform sentiment analysis
-     sentiment = await analyzeSentiment(truncatedContent);
+     // sentiment = await analyzeSentiment(truncatedContent);
  
      
      // Store sentiment in localStorage if valid
-     if (sentiment) {
-       storeSentiment(sentiment, window.location.href);
-     } else {
-       logMessage(`${CONSTANTS.LOG_PRE_FIX} Failed to get sentiment analysis`);
-     }
+    //  if (sentiment) {
+    //    storeSentiment(sentiment, window.location.href);
+    //  } else {
+    //    logMessage(`${CONSTANTS.LOG_PRE_FIX} Failed to get sentiment analysis`);
+    //  }
    } else {
      sentiment = storedSentiment;
    }
@@ -712,233 +712,404 @@ export const registerSubModule = () => {
 registerSubModule();
 
 const IAB_CATEGORIES = {
-    "IAB1": {
-      "name": "Arts & Entertainment",
-      "subcategories": {"IAB1-1": "Books & Literature", "IAB1-2": "Celebrity Fan/Gossip", "IAB1-3": "Fine Art", "IAB1-4": "Humor", "IAB1-5": "Movies", "IAB1-6": "Music", "IAB1-7": "Television"},
-      "keywords": ["entertainment", "art", "movie", "film", "music", "concert", "book", "novel", "celebrity", "actor", "actress", "director", "tv", "television", "show", "theater", "comedy", "drama"]
-    },
-    "IAB2": {
-      "name": "Automotive",
-      "subcategories": {"IAB2-1": "Auto Parts", "IAB2-2": "Auto Repair", "IAB2-3": "Buying/Selling Cars"},
-      "keywords": ["car", "vehicle", "automotive", "auto", "truck", "suv", "repair", "parts", "dealer", "driving"]
-    },
-    "IAB3": {
-      "name": "Business",
-      "subcategories": {"IAB3-1": "Advertising", "IAB3-2": "Agriculture", "IAB3-3": "Biotech/Biomedical"},
-      "keywords": ["business", "company", "corporate", "industry", "market", "finance", "investment", "economy", "trade", "stock", "management"]
-    },
-    "IAB4": {
-      "name": "Careers",
-      "subcategories": {"IAB4-1": "Career Planning", "IAB4-2": "College", "IAB4-3": "Financial Aid"},
-      "keywords": ["job", "career", "employment", "hiring", "resume", "interview", "salary", "profession", "work"]
-    },
-    "IAB5": {
-      "name": "Education",
-      "subcategories": {"IAB5-1": "7-12 Education", "IAB5-2": "Adult Education", "IAB5-3": "Art History"},
-      "keywords": ["education", "school", "university", "college", "degree", "academic", "learning", "student", "teacher", "professor", "course", "class"]
-    },
-    "IAB6": {
-      "name": "Family & Parenting",
-      "subcategories": {"IAB6-1": "Adoption", "IAB6-2": "Babies & Toddlers", "IAB6-3": "Daycare/Pre School"},
-      "keywords": ["family", "parent", "child", "baby", "kid", "mother", "father", "pregnancy", "toddler", "parenting"]
-    },
-    "IAB7": {
-      "name": "Health & Fitness",
-      "subcategories": {"IAB7-1": "Exercise", "IAB7-2": "A.D.D.", "IAB7-3": "AIDS/HIV"},
-      "keywords": ["health", "fitness", "exercise", "workout", "diet", "nutrition", "medical", "disease", "doctor", "hospital", "medicine", "wellness"]
-    },
-    "IAB8": {
-      "name": "Food & Drink",
-      "subcategories": {"IAB8-1": "American Cuisine", "IAB8-2": "Barbecues & Grilling", "IAB8-3": "Cajun/Creole"},
-      "keywords": ["food", "drink", "recipe", "cooking", "cuisine", "restaurant", "chef", "meal", "dinner", "lunch", "breakfast", "baking", "grill"]
-    },
-    "IAB9": {
-      "name": "Hobbies & Interests",
-      "subcategories": {"IAB9-1": "Art/Technology", "IAB9-2": "Arts & Crafts", "IAB9-3": "Beadwork"},
-      "keywords": ["hobby", "craft", "collection", "diy", "gardening", "photography", "sewing", "knitting", "woodworking", "interest"]
-    },
-    "IAB10": {
-      "name": "Home & Garden",
-      "subcategories": {"IAB10-1": "Appliances", "IAB10-2": "Entertaining", "IAB10-3": "Environmental Safety"},
-      "keywords": ["home", "house", "garden", "furniture", "decor", "interior", "design", "decoration", "gardening", "landscaping", "lawn", "appliance"]
-    },
-    "IAB11": {
-      "name": "Law, Gov't & Politics",
-      "subcategories": {"IAB11-1": "Immigration", "IAB11-2": "Legal Issues", "IAB11-3": "Government"},
-      "keywords": ["law", "legal", "government", "politics", "policy", "election", "vote", "political", "president", "congress", "court", "legislation"]
-    },
-    "IAB12": {
-      "name": "News",
-      "subcategories": {"IAB12-1": "International News", "IAB12-2": "National News", "IAB12-3": "Local News"},
-      "keywords": ["news", "headline", "report", "journalist", "media", "press", "breaking", "current events", "update"]
-    },
-    "IAB13": {
-      "name": "Personal Finance",
-      "subcategories": {"IAB13-1": "Beginning Investing", "IAB13-2": "Credit/Debt & Loans", "IAB13-3": "Financial News"},
-      "keywords": ["finance", "money", "invest", "loan", "credit", "debt", "mortgage", "banking", "budget", "saving", "retirement"]
-    },
-    "IAB14": {
-      "name": "Society",
-      "subcategories": {"IAB14-1": "Dating", "IAB14-2": "Divorce Support", "IAB14-3": "Gay Life"},
-      "keywords": ["society", "culture", "community", "relationship", "dating", "wedding", "marriage", "divorce", "social"]
-    },
-    "IAB15": {
-      "name": "Science",
-      "subcategories": {"IAB15-1": "Astrology", "IAB15-2": "Biology", "IAB15-3": "Chemistry"},
-      "keywords": ["science", "research", "scientific", "biology", "chemistry", "physics", "astronomy", "technology", "experiment", "discovery"]
-    },
-    "IAB16": {
-      "name": "Pets",
-      "subcategories": {"IAB16-1": "Aquariums", "IAB16-2": "Birds", "IAB16-3": "Cats"},
-      "keywords": ["pet", "dog", "cat", "animal", "veterinarian", "breed", "fish", "bird", "reptile", "hamster"]
-    },
-    "IAB17": {
-      "name": "Sports",
-      "subcategories": {"IAB17-1": "Auto Racing", "IAB17-2": "Baseball", "IAB17-3": "Bicycling", "IAB17-4": "Bodybuilding", "IAB17-5": "Boxing", "IAB17-6": "Canoeing/Kayaking", "IAB17-7": "Cheerleading", "IAB17-8": "Climbing", "IAB17-9": "Cricket", "IAB17-10": "Figure Skating", "IAB17-11": "Fly Fishing", "IAB17-12": "Football", "IAB17-13": "Freshwater Fishing", "IAB17-14": "Game & Fish", "IAB17-15": "Golf", "IAB17-16": "Horse Racing", "IAB17-17": "Horses", "IAB17-18": "Hunting/Shooting", "IAB17-19": "Inline Skating", "IAB17-20": "Martial Arts", "IAB17-21": "Mountain Biking", "IAB17-22": "NASCAR Racing", "IAB17-23": "Olympics", "IAB17-24": "Paintball", "IAB17-25": "Power & Motorcycles", "IAB17-26": "Pro Basketball", "IAB17-27": "Pro Ice Hockey", "IAB17-28": "Rodeo", "IAB17-29": "Rugby", "IAB17-30": "Running/Jogging", "IAB17-31": "Sailing", "IAB17-32": "Saltwater Fishing", "IAB17-33": "Scuba Diving", "IAB17-34": "Skateboarding", "IAB17-35": "Skiing", "IAB17-36": "Snowboarding", "IAB17-37": "Surfing/Bodyboarding", "IAB17-38": "Swimming", "IAB17-39": "Table Tennis/Ping-Pong", "IAB17-40": "Tennis", "IAB17-41": "Volleyball", "IAB17-42": "Walking", "IAB17-43": "Waterski/Wakeboard", "IAB17-44": "World Soccer"},
-      "keywords": ["sport", "game", "team", "player", "athlete", "championship", "tournament", "match", "competition", "league", "score", "win", "coach", "stadium", "cricket", "baseball", "football", "soccer", "basketball", "tennis", "golf", "hockey", "rugby", "boxing", "racing", "swimming", "cycling", "olympics", "fitness", "workout", "exercise", "run", "race", "ball", "bat", "wicket", "bowl", "pitch", "field", "court", "track"]
-    },
-    "IAB18": {
-      "name": "Style & Fashion",
-      "subcategories": {"IAB18-1": "Beauty", "IAB18-2": "Body Art", "IAB18-3": "Fashion"},
-      "keywords": ["fashion", "style", "clothing", "dress", "beauty", "accessory", "jewelry", "cosmetic", "makeup", "hair", "model", "designer"]
-    },
-    "IAB19": {
-      "name": "Technology & Computing",
-      "subcategories": {"IAB19-1": "3-D Graphics", "IAB19-2": "Animation", "IAB19-3": "Antivirus Software"},
-      "keywords": ["technology", "computer", "software", "hardware", "internet", "digital", "app", "programming", "code", "device", "gadget", "electronics", "mobile", "phone", "laptop", "tablet"]
-    },
-    "IAB20": {
-      "name": "Travel",
-      "subcategories": {"IAB20-1": "Adventure Travel", "IAB20-2": "Africa", "IAB20-3": "Air Travel"},
-      "keywords": ["travel", "vacation", "tourism", "tourist", "destination", "hotel", "resort", "flight", "airline", "cruise", "beach", "mountain", "trip", "journey", "tour"]
-    },
-    "IAB21": {
-      "name": "Real Estate",
-      "subcategories": {"IAB21-1": "Apartments", "IAB21-2": "Architects", "IAB21-3": "Buying/Selling Homes"},
-      "keywords": ["real estate", "property", "home", "house", "apartment", "condo", "rent", "buy", "sell", "mortgage", "realtor", "broker", "listing"]
-    },
-    "IAB22": {
-      "name": "Shopping",
-      "subcategories": {"IAB22-1": "Contests & Freebies", "IAB22-2": "Couponing", "IAB22-3": "Comparison"},
-      "keywords": ["shopping", "store", "retail", "mall", "shop", "buy", "purchase", "product", "price", "discount", "sale", "deal", "coupon"]
-    },
-    "IAB23": {
-      "name": "Religion & Spirituality",
-      "subcategories": {"IAB23-1": "Alternative Religions", "IAB23-2": "Atheism/Agnosticism", "IAB23-3": "Buddhism"},
-      "keywords": ["religion", "spiritual", "faith", "god", "church", "prayer", "worship", "belief", "religious", "christian", "muslim", "islam", "hindu", "buddhist", "jewish"]
-    }
+  "IAB1": {
+    "name": "Arts & Entertainment",
+    "subcategories": {"IAB1-1": "Books & Literature", "IAB1-2": "Celebrity Fan/Gossip", "IAB1-3": "Fine Art", "IAB1-4": "Humor", "IAB1-5": "Movies", "IAB1-6": "Music", "IAB1-7": "Television"},
+    "keywords": ["entertainment", "art", "movie", "film", "music", "concert", "book", "novel", "celebrity", "actor", "actress", "director", "tv", "television", "show", "theater", "comedy", "drama"]
+  },
+  "IAB2": {
+    "name": "Automotive",
+    "subcategories": {"IAB2-1": "Auto Parts", "IAB2-2": "Auto Repair", "IAB2-3": "Buying/Selling Cars"},
+    "keywords": ["car", "vehicle", "automotive", "auto", "truck", "suv", "repair", "parts", "dealer", "driving"]
+  },
+  "IAB3": {
+    "name": "Business",
+    "subcategories": {"IAB3-1": "Advertising", "IAB3-2": "Agriculture", "IAB3-3": "Biotech/Biomedical"},
+    "keywords": ["business", "company", "corporate", "industry", "market", "finance", "investment", "economy", "trade", "stock", "management"]
+  },
+  "IAB4": {
+    "name": "Careers",
+    "subcategories": {"IAB4-1": "Career Planning", "IAB4-2": "College", "IAB4-3": "Financial Aid"},
+    "keywords": ["job", "career", "employment", "hiring", "resume", "interview", "salary", "profession", "work"]
+  },
+  "IAB5": {
+    "name": "Education",
+    "subcategories": {"IAB5-1": "7-12 Education", "IAB5-2": "Adult Education", "IAB5-3": "Art History"},
+    "keywords": ["education", "school", "university", "college", "degree", "academic", "learning", "student", "teacher", "professor", "course", "class"]
+  },
+  "IAB6": {
+    "name": "Family & Parenting",
+    "subcategories": {"IAB6-1": "Adoption", "IAB6-2": "Babies & Toddlers", "IAB6-3": "Daycare/Pre School"},
+    "keywords": ["family", "parent", "child", "baby", "kid", "mother", "father", "pregnancy", "toddler", "parenting"]
+  },
+  "IAB7": {
+    "name": "Health & Fitness",
+    "subcategories": {"IAB7-1": "Exercise", "IAB7-2": "A.D.D.", "IAB7-3": "AIDS/HIV"},
+    "keywords": ["health", "fitness", "exercise", "workout", "diet", "nutrition", "medical", "disease", "doctor", "hospital", "medicine", "wellness"]
+  },
+  "IAB8": {
+    "name": "Food & Drink",
+    "subcategories": {"IAB8-1": "American Cuisine", "IAB8-2": "Barbecues & Grilling", "IAB8-3": "Cajun/Creole"},
+    "keywords": ["food", "drink", "recipe", "cooking", "cuisine", "restaurant", "chef", "meal", "dinner", "lunch", "breakfast", "baking", "grill"]
+  },
+  "IAB9": {
+    "name": "Hobbies & Interests",
+    "subcategories": {"IAB9-1": "Art/Technology", "IAB9-2": "Arts & Crafts", "IAB9-3": "Beadwork"},
+    "keywords": ["hobby", "craft", "collection", "diy", "gardening", "photography", "sewing", "knitting", "woodworking", "interest"]
+  },
+  "IAB10": {
+    "name": "Home & Garden",
+    "subcategories": {"IAB10-1": "Appliances", "IAB10-2": "Entertaining", "IAB10-3": "Environmental Safety"},
+    "keywords": ["home", "house", "garden", "furniture", "decor", "interior", "design", "decoration", "gardening", "landscaping", "lawn", "appliance"]
+  },
+  "IAB11": {
+    "name": "Law, Gov't & Politics",
+    "subcategories": {"IAB11-1": "Immigration", "IAB11-2": "Legal Issues", "IAB11-3": "Government"},
+    "keywords": ["law", "legal", "government", "politics", "policy", "election", "vote", "political", "president", "congress", "court", "legislation"]
+  },
+  "IAB12": {
+    "name": "News",
+    "subcategories": {"IAB12-1": "International News", "IAB12-2": "National News", "IAB12-3": "Local News"},
+    "keywords": ["news", "headline", "report", "journalist", "media", "press", "breaking", "current events", "update"]
+  },
+  "IAB13": {
+    "name": "Personal Finance",
+    "subcategories": {"IAB13-1": "Beginning Investing", "IAB13-2": "Credit/Debt & Loans", "IAB13-3": "Financial News"},
+    "keywords": ["finance", "money", "invest", "loan", "credit", "debt", "mortgage", "banking", "budget", "saving", "retirement"]
+  },
+  "IAB14": {
+    "name": "Society",
+    "subcategories": {"IAB14-1": "Dating", "IAB14-2": "Divorce Support", "IAB14-3": "Gay Life"},
+    "keywords": ["society", "culture", "community", "relationship", "dating", "wedding", "marriage", "divorce", "social"]
+  },
+  "IAB15": {
+    "name": "Science",
+    "subcategories": {"IAB15-1": "Astrology", "IAB15-2": "Biology", "IAB15-3": "Chemistry"},
+    "keywords": ["science", "research", "scientific", "biology", "chemistry", "physics", "astronomy", "technology", "experiment", "discovery"]
+  },
+  "IAB16": {
+    "name": "Pets",
+    "subcategories": {"IAB16-1": "Aquariums", "IAB16-2": "Birds", "IAB16-3": "Cats"},
+    "keywords": ["pet", "dog", "cat", "animal", "veterinarian", "breed", "fish", "bird", "reptile", "hamster"]
+  },
+  "IAB17": {
+    "name": "Sports",
+    "subcategories": {"IAB17-1": "Auto Racing", "IAB17-2": "Baseball", "IAB17-3": "Bicycling", "IAB17-4": "Bodybuilding", "IAB17-5": "Boxing", "IAB17-6": "Canoeing/Kayaking", "IAB17-7": "Cheerleading", "IAB17-8": "Climbing", "IAB17-9": "Cricket", "IAB17-10": "Figure Skating", "IAB17-11": "Fly Fishing", "IAB17-12": "Football", "IAB17-13": "Freshwater Fishing", "IAB17-14": "Game & Fish", "IAB17-15": "Golf", "IAB17-16": "Horse Racing", "IAB17-17": "Horses", "IAB17-18": "Hunting/Shooting", "IAB17-19": "Inline Skating", "IAB17-20": "Martial Arts", "IAB17-21": "Mountain Biking", "IAB17-22": "NASCAR Racing", "IAB17-23": "Olympics", "IAB17-24": "Paintball", "IAB17-25": "Power & Motorcycles", "IAB17-26": "Pro Basketball", "IAB17-27": "Pro Ice Hockey", "IAB17-28": "Rodeo", "IAB17-29": "Rugby", "IAB17-30": "Running/Jogging", "IAB17-31": "Sailing", "IAB17-32": "Saltwater Fishing", "IAB17-33": "Scuba Diving", "IAB17-34": "Skateboarding", "IAB17-35": "Skiing", "IAB17-36": "Snowboarding", "IAB17-37": "Surfing/Bodyboarding", "IAB17-38": "Swimming", "IAB17-39": "Table Tennis/Ping-Pong", "IAB17-40": "Tennis", "IAB17-41": "Volleyball", "IAB17-42": "Walking", "IAB17-43": "Waterski/Wakeboard", "IAB17-44": "World Soccer"},
+    "keywords": ["sport", "game", "team", "player", "athlete", "championship", "tournament", "match", "competition", "league", "score", "win", "coach", "stadium", "cricket", "baseball", "football", "soccer", "basketball", "tennis", "golf", "hockey", "rugby", "boxing", "racing", "swimming", "cycling", "olympics", "fitness", "workout", "exercise", "run", "race", "ball", "bat", "wicket", "bowl", "pitch", "field", "court", "track"]
+  },
+  "IAB18": {
+    "name": "Style & Fashion",
+    "subcategories": {"IAB18-1": "Beauty", "IAB18-2": "Body Art", "IAB18-3": "Fashion"},
+    "keywords": ["fashion", "style", "clothing", "dress", "beauty", "accessory", "jewelry", "cosmetic", "makeup", "hair", "model", "designer"]
+  },
+  "IAB19": {
+    "name": "Technology & Computing",
+    "subcategories": {"IAB19-1": "3-D Graphics", "IAB19-2": "Animation", "IAB19-3": "Antivirus Software"},
+    "keywords": ["technology", "computer", "software", "hardware", "internet", "digital", "app", "programming", "code", "device", "gadget", "electronics", "mobile", "phone", "laptop", "tablet"]
+  },
+  "IAB20": {
+    "name": "Travel",
+    "subcategories": {"IAB20-1": "Adventure Travel", "IAB20-2": "Africa", "IAB20-3": "Air Travel"},
+    "keywords": ["travel", "vacation", "tourism", "tourist", "destination", "hotel", "resort", "flight", "airline", "cruise", "beach", "mountain", "trip", "journey", "tour"]
+  },
+  "IAB21": {
+    "name": "Real Estate",
+    "subcategories": {"IAB21-1": "Apartments", "IAB21-2": "Architects", "IAB21-3": "Buying/Selling Homes"},
+    "keywords": ["real estate", "property", "home", "house", "apartment", "condo", "rent", "buy", "sell", "mortgage", "realtor", "broker", "listing"]
+  },
+  "IAB22": {
+    "name": "Shopping",
+    "subcategories": {"IAB22-1": "Contests & Freebies", "IAB22-2": "Couponing", "IAB22-3": "Comparison"},
+    "keywords": ["shopping", "store", "retail", "mall", "shop", "buy", "purchase", "product", "price", "discount", "sale", "deal", "coupon"]
+  },
+  "IAB23": {
+    "name": "Religion & Spirituality",
+    "subcategories": {"IAB23-1": "Alternative Religions", "IAB23-2": "Atheism/Agnosticism", "IAB23-3": "Buddhism"},
+    "keywords": ["religion", "spiritual", "faith", "god", "church", "prayer", "worship", "belief", "religious", "christian", "muslim", "islam", "hindu", "buddhist", "jewish"]
+  }
+};
+
+/**
+ * Maps text content to relevant IAB categories using advanced text analysis
+ * @param {string} text - The text to analyze for IAB category mapping
+ * @returns {Array} - Array of matching IAB categories
+ */
+function mapToIABCategories(text) {
+  // Convert input text to lowercase for case-insensitive matching
+  const lowerText = text.toLowerCase();
+  
+  // Store matches with their scores and confidence
+  const categoryMatches = {};
+  
+  // Extract important keywords from the text
+  const wordFrequency = getWordFrequency(lowerText);
+  const importantKeywords = extractImportantKeywords(wordFrequency);
+  
+  logMessage(`${CONSTANTS.LOG_PRE_FIX} Important keywords extracted:`, importantKeywords.slice(0, 10));
+  
+  // Track contextual signals for better categorization
+  const contextualSignals = {
+    hasViolence: /\b(war|conflict|fight|battle|attack|bomb|kill|death|casualty|violence|weapon|military|assault)\b/gi.test(lowerText),
+    hasSports: /\b(sport|game|player|team|match|tournament|championship|league|score|win|coach|athlete|stadium|ball)\b/gi.test(lowerText),
+    hasFinance: /\b(money|finance|economic|market|stock|invest|bank|dollar|euro|currency|trade|profit|budget|fiscal)\b/gi.test(lowerText),
+    hasTech: /\b(technology|computer|software|hardware|digital|internet|app|mobile|device|data|code|program|online)\b/gi.test(lowerText),
+    hasHealth: /\b(health|medical|doctor|patient|disease|treatment|hospital|medicine|symptom|diagnosis|therapy|clinic|drug)\b/gi.test(lowerText),
+    hasEntertainment: /\b(movie|film|music|song|actor|actress|celebrity|show|concert|entertainment|theater|performance|artist)\b/gi.test(lowerText),
+    hasTravel: /\b(travel|vacation|hotel|flight|tourism|destination|trip|tour|holiday|resort|beach|tourist|visit)\b/gi.test(lowerText),
+    hasPolitics: /\b(politic|government|election|president|minister|party|vote|campaign|policy|democrat|republican|congress|parliament)\b/gi.test(lowerText)
   };
   
-  /**
-   * Maps text content to relevant IAB categories using keyword matching
-   * @param {string} text - The text to analyze for IAB category mapping
-   * @returns {Array} - Array of matching IAB categories
-   */
-  function mapToIABCategories(text) {
-    // Convert input text to lowercase for case-insensitive matching
-    const lowerText = text.toLowerCase();
+  // Iterate through each IAB category
+  for (const [categoryCode, category] of Object.entries(IAB_CATEGORIES)) {
+    // Initialize base score
+    let score = 0;
+    let keywordMatches = [];
+    let contextMultiplier = 1;
     
-    // Store matches with their scores
-    const categoryMatches = {};
-    
-    // Iterate through each IAB category
-    for (const [categoryCode, category] of Object.entries(IAB_CATEGORIES)) {
-      let score = 0;
-      
-      // Check for keyword matches in the main category
-      for (const keyword of category.keywords) {
-        // Use regular expression to find whole word matches
-        const regex = new RegExp(`\\b${keyword}\\b`, 'gi');
-        const matches = lowerText.match(regex);
-        
-        if (matches) {
-          // Add to the score based on the number of matches
-          score += matches.length;
-        }
-      }
-      
-      // If we have matches, store the category with its score
-      if (score > 0) {
-        categoryMatches[categoryCode] = {
-          code: categoryCode,
-          name: category.name,
-          score: score,
-          subcategories: []
-        };
-        
-        // Check for subcategory matches
-        for (const [subCode, subName] of Object.entries(category.subcategories)) {
-          // Convert subcategory name to keywords
-          const subKeywords = subName.toLowerCase().split(/\s+/);
-          let subScore = 0;
-          
-          for (const keyword of subKeywords) {
-            if (keyword.length < 3) continue; // Skip short words
-            
-            const regex = new RegExp(`\\b${keyword}\\b`, 'gi');
-            const matches = lowerText.match(regex);
-            
-            if (matches) {
-              subScore += matches.length;
-            }
-          }
-          
-          // Special case for Cricket
-          if (subCode === "IAB17-9" && /\bcricket\b/i.test(lowerText)) {
-            subScore += 10; // Give a high score for direct cricket mentions
-          }
-          
-          if (subScore > 0) {
-            categoryMatches[categoryCode].subcategories.push({
-              code: subCode,
-              name: subName,
-              score: subScore
-            });
-          }
-        }
-      }
+    // Apply contextual boosting
+    switch(categoryCode) {
+      case 'IAB1': // Arts & Entertainment
+        if (contextualSignals.hasEntertainment) contextMultiplier = 1.5;
+        break;
+      case 'IAB3': // Business
+        if (contextualSignals.hasFinance) contextMultiplier = 1.5;
+        break;
+      case 'IAB5': // Education
+        if (/\b(education|school|student|learn|teach|university|college|course|academic)\b/gi.test(lowerText)) contextMultiplier = 1.5;
+        break;
+      case 'IAB7': // Health & Fitness
+        if (contextualSignals.hasHealth) contextMultiplier = 1.5;
+        break;
+      case 'IAB9': // Hobbies & Interests
+        if (/\b(hobby|interest|collect|craft|diy|garden)\b/gi.test(lowerText)) contextMultiplier = 1.3;
+        break;
+      case 'IAB11': // Law, Government & Politics
+        if (contextualSignals.hasPolitics) contextMultiplier = 1.5;
+        break;
+      case 'IAB13': // News
+        // News about specific topics should be categorized by the topic first
+        if (contextualSignals.hasViolence || contextualSignals.hasPolitics || contextualSignals.hasFinance) contextMultiplier = 0.8;
+        else contextMultiplier = 1.2;
+        break;
+      case 'IAB14': // Personal Finance
+        if (contextualSignals.hasFinance && /\b(personal|individual|family|household)\b/gi.test(lowerText)) contextMultiplier = 1.5;
+        break;
+      case 'IAB17': // Sports
+        if (contextualSignals.hasSports) contextMultiplier = 1.5;
+        break;
+      case 'IAB19': // Technology & Computing
+        if (contextualSignals.hasTech) contextMultiplier = 1.5;
+        break;
+      case 'IAB20': // Travel
+        if (contextualSignals.hasTravel) contextMultiplier = 1.5;
+        break;
     }
     
-    // Convert to array and sort by score (highest first)
-    const sortedCategories = Object.values(categoryMatches)
-      .sort((a, b) => b.score - a.score)
-      .slice(0, 3); // Get top 3 categories
-    
-    // Format the results
-    const result = [];
-    for (const category of sortedCategories) {
-      // Sort subcategories by score
-      category.subcategories.sort((a, b) => b.score - a.score);
+    // Check for keyword matches in the main category with improved matching
+    for (const keyword of category.keywords) {
+      // Use regular expression to find whole word matches
+      const regex = new RegExp(`\\b${keyword}\\b`, 'gi');
+      const matches = lowerText.match(regex);
       
-      if (category.subcategories.length > 0) {
-        // Add the top subcategory
-        const topSubcategory = category.subcategories[0];
-        result.push({
-          code: `${category.code}:${topSubcategory.code}`,
-          name: `${category.name} → ${topSubcategory.name}`,
-          mainCategory: {
-            code: category.code,
-            name: category.name
-          },
-          subCategory: {
-            code: topSubcategory.code,
-            name: topSubcategory.name
-          }
-        });
-      } else {
-        // Just add the main category
-        result.push({
-          code: category.code,
-          name: category.name,
-          mainCategory: {
-            code: category.code,
-            name: category.name
-          },
-          subCategory: null
+      if (matches) {
+        const matchCount = matches.length;
+        // Weight by keyword importance and position in text
+        const keywordImportance = importantKeywords.includes(keyword) ? 2 : 1;
+        const positionWeight = getPositionWeight(lowerText, keyword);
+        
+        // Calculate weighted score for this keyword
+        const keywordScore = matchCount * keywordImportance * positionWeight;
+        score += keywordScore;
+        
+        keywordMatches.push({
+          keyword,
+          count: matchCount,
+          score: keywordScore
         });
       }
     }
     
-    return result;
+    // Apply contextual multiplier
+    score = score * contextMultiplier;
+    
+    // Check for semantic matches using important keywords
+    const semanticScore = calculateSemanticScore(importantKeywords, category.keywords);
+    score += semanticScore;
+    
+    // Only consider categories with a meaningful score
+    if (score > 1) {
+      categoryMatches[categoryCode] = {
+        code: categoryCode,
+        name: category.name,
+        score: score,
+        confidence: 0, // Will calculate after all scores are in
+        keywordMatches: keywordMatches,
+        contextMultiplier: contextMultiplier,
+        semanticScore: semanticScore
+      };
+    }
   }
+  
+  // Convert to array and sort by score
+  const sortedMatches = Object.values(categoryMatches).sort((a, b) => b.score - a.score);
+  
+  // Calculate confidence scores (normalize relative to highest score)
+  if (sortedMatches.length > 0) {
+    const highestScore = sortedMatches[0].score;
+    sortedMatches.forEach(match => {
+      match.confidence = Math.min(0.99, match.score / highestScore);
+    });
+  }
+  
+  // Filter to categories with reasonable confidence
+  const significantMatches = sortedMatches.filter(match => match.confidence > 0.3);
+  
+  // Ensure we have at least 2 categories and at most 3
+  let topCategories;
+  if (significantMatches.length >= 2) {
+    // If we have enough significant matches, use those (up to 3)
+    topCategories = significantMatches.slice(0, 3);
+  } else if (significantMatches.length === 1 && sortedMatches.length >= 2) {
+    // If we have only one significant match but more matches available, include the next best one
+    topCategories = [significantMatches[0], sortedMatches[1]];
+    // Add one more if available (max 3 total)
+    if (sortedMatches.length > 2) {
+      topCategories.push(sortedMatches[2]);
+    }
+  } else if (sortedMatches.length >= 2) {
+    // If no significant matches but we have at least 2 matches, use those (up to 3)
+    topCategories = sortedMatches.slice(0, 3);
+  } else if (sortedMatches.length === 1) {
+    // If we only have one match, use it and add a fallback category
+    topCategories = [sortedMatches[0], {
+      code: 'IAB13', // News as fallback
+      name: 'News',
+      score: sortedMatches[0].score * 0.7,
+      confidence: 0.7 * sortedMatches[0].confidence
+    }];
+  } else {
+    // If no matches at all, provide exactly two default categories
+    topCategories = [
+      {
+        code: 'IAB13', // News
+        name: 'News',
+        score: 5,
+        confidence: 0.7
+      },
+      {
+        code: 'IAB19', // Technology & Computing
+        name: 'Technology & Computing',
+        score: 4,
+        confidence: 0.6
+      }
+    ];
+  }
+  
+  // Format the results
+  const results = topCategories.map(match => ({
+    categoryId: match.code,
+    categoryName: match.name,
+    confidence: match.confidence.toFixed(2)
+  }));
+  
+  logMessage(`${CONSTANTS.LOG_PRE_FIX} IAB Category mapping results:`, results);
+  
+  return results;
+}
+
+/**
+ * Calculate word frequency in text
+ * @param {string} text - The text to analyze
+ * @returns {Object} - Object with words as keys and frequencies as values
+ */
+function getWordFrequency(text) {
+  // Remove punctuation and split into words
+  const words = text.replace(/[^\w\s]/g, '').split(/\s+/);
+  const frequency = {};
+  const stopWords = new Set(['the', 'and', 'a', 'an', 'in', 'on', 'at', 'to', 'for', 'of', 'with', 'by', 'as', 'is', 'are', 'was', 'were', 'be', 'been', 'being', 'have', 'has', 'had', 'do', 'does', 'did', 'but', 'or', 'if', 'then', 'else', 'when', 'up', 'down', 'this', 'that', 'these', 'those', 'it', 'its', 'they', 'them', 'their', 'there', 'here', 'where', 'who', 'whom', 'what', 'which', 'how', 'why', 'can', 'could', 'will', 'would', 'shall', 'should', 'may', 'might', 'must']);
+  
+  // Count word frequencies, excluding stop words and very short words
+  words.forEach(word => {
+    if (word.length > 2 && !stopWords.has(word)) {
+      frequency[word] = (frequency[word] || 0) + 1;
+    }
+  });
+  
+  return frequency;
+}
+
+/**
+ * Extract important keywords based on frequency and length
+ * @param {Object} wordFrequency - Word frequency object
+ * @returns {Array} - Array of important keywords
+ */
+function extractImportantKeywords(wordFrequency) {
+  // Convert to array of [word, frequency] pairs
+  const wordPairs = Object.entries(wordFrequency);
+  
+  // Sort by frequency, then by word length for equally frequent words
+  wordPairs.sort((a, b) => {
+    if (b[1] === a[1]) {
+      return b[0].length - a[0].length; // Longer words are more specific
+    }
+    return b[1] - a[1]; // Higher frequency first
+  });
+  
+  // Extract just the words
+  return wordPairs.map(pair => pair[0]);
+}
+
+/**
+ * Calculate position weight for a keyword in text
+ * Words appearing in the beginning of text are more important
+ * @param {string} text - The full text
+ * @param {string} keyword - The keyword to check
+ * @returns {number} - Position weight multiplier
+ */
+function getPositionWeight(text, keyword) {
+  const firstOccurrence = text.indexOf(keyword);
+  if (firstOccurrence === -1) return 1;
+  
+  const textLength = text.length;
+  const relativePosition = firstOccurrence / textLength;
+  
+  // Words in the first 20% of the text get higher weight
+  if (relativePosition < 0.2) return 1.5;
+  // Words in the first half get slightly higher weight
+  if (relativePosition < 0.5) return 1.2;
+  return 1;
+}
+
+/**
+ * Calculate semantic similarity between important keywords and category keywords
+ * @param {Array} importantKeywords - Important keywords from the text
+ * @param {Array} categoryKeywords - Keywords for a specific category
+ * @returns {number} - Semantic similarity score
+ */
+function calculateSemanticScore(importantKeywords, categoryKeywords) {
+  let score = 0;
+  
+  // Check for partial matches and stem matches
+  importantKeywords.slice(0, 20).forEach(keyword => {
+    categoryKeywords.forEach(categoryKeyword => {
+      // Check if one is substring of the other (with minimum 4 chars)
+      if (keyword.length >= 4 && categoryKeyword.length >= 4) {
+        if (keyword.includes(categoryKeyword) || categoryKeyword.includes(keyword)) {
+          score += 0.5;
+        }
+      }
+      
+      // Check for stem matches (simplified stemming)
+      const keywordStem = keyword.length > 4 ? keyword.substring(0, keyword.length - 2) : keyword;
+      const categoryStem = categoryKeyword.length > 4 ? categoryKeyword.substring(0, categoryKeyword.length - 2) : categoryKeyword;
+      
+      if (keywordStem.length >= 4 && categoryStem.length >= 4 && keywordStem === categoryStem) {
+        score += 0.7;
+      }
+    });
+  });
+  
+  return score;
+}
+
   
