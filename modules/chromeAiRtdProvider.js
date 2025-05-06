@@ -381,7 +381,7 @@ const analyzeSentiment = async (text) => {
       TEXT TO ANALYZE:
       "${text}"
 
-      FORMAT YOUR RESPONSE AS A JSON OBJECT WITH THE FOLLOWING STRUCTURE:
+      FORMAT YOUR RESPONSE AS A JSON OBJECT WITH THE FOLLOWING STRUCTURE: (Values given are examples)
       {
         "sentiment": "positive|negative|neutral",
         "sentiment_score": [number between -1.0 and 1.0, where -1.0 is extremely negative, 0 is neutral, and 1.0 is extremely positive],
@@ -560,62 +560,62 @@ const init = async (config, _userConsent) => {
   };
   
   // Get page summary using Chrome AI
-  //const summary = await getPageSummary(options);
+  const summary = await getPageSummary(options);
 
-  const summaryThroughPrompt = await getSummaryThroughPrompt();
+  // const summaryThroughPrompt = await getSummaryThroughPrompt();
 
   // Get sentiment analysis using Chrome AI
-  //const sentiment = await analyzeSentiment(summary);
-  const sentimentThroughPrompt = await analyzeSentiment(summaryThroughPrompt);
+  // const sentiment = await analyzeSentiment(summary);
+  // const sentimentThroughPrompt = await analyzeSentiment(summaryThroughPrompt);
   
-  // if (!summary) {
-  //   logMessage(`${CONSTANTS.LOG_PRE_FIX} Failed to get page summary, aborting`);
-  //   return false;
-  // }
-
-  if (!summaryThroughPrompt) {
-    logMessage(`${CONSTANTS.LOG_PRE_FIX} Failed to get page summary through prompt, aborting`);
+  if (!summary) {
+    logMessage(`${CONSTANTS.LOG_PRE_FIX} Failed to get page summary, aborting`);
     return false;
   }
+
+  // if (!summaryThroughPrompt) {
+  //   logMessage(`${CONSTANTS.LOG_PRE_FIX} Failed to get page summary through prompt, aborting`);
+  //   return false;
+  // }
   
   // Process summary: detect language and translate if needed
-  //const processedSummary = await processSummary(summary);
+  const processedSummary = await processSummary(summary);
   
-  // if (!processedSummary) {
-  //   logMessage(`${CONSTANTS.LOG_PRE_FIX} Failed to process summary, aborting`);
-  //   return false;
-  // }
-
-  const processedSummaryThroughPrompt = await processSummary(summaryThroughPrompt);
-  
-  if (!processedSummaryThroughPrompt) {
-    logMessage(`${CONSTANTS.LOG_PRE_FIX} Failed to process summary through prompt, aborting`);
+  if (!processedSummary) {
+    logMessage(`${CONSTANTS.LOG_PRE_FIX} Failed to process summary, aborting`);
     return false;
   }
-  
-  // Map the processed summary to IAB categories
-  // console.time("IABMappingTime");
-  // const iabCategories = mapToIABCategories(processedSummary);
-  // console.timeEnd("IABMappingTime");
-  
-  // // Store categories in localStorage if valid
-  // if (iabCategories && iabCategories.length > 0) {
-  //   storeIabCategories(iabCategories, window.location.href);
-  // } else {
-  //   logMessage(`${CONSTANTS.LOG_PRE_FIX} No valid IAB categories found for this page`);
-  // }
 
+  // const processedSummaryThroughPrompt = await processSummary(summaryThroughPrompt);
+  
+  // if (!processedSummaryThroughPrompt) {
+  //   logMessage(`${CONSTANTS.LOG_PRE_FIX} Failed to process summary through prompt, aborting`);
+  //   return false;
+  // }
+  
   // Map the processed summary to IAB categories
-  console.time("IABMappingTime - Through Prompt");
-  const iabCategoriesThroughPrompt = mapToIABCategories(processedSummaryThroughPrompt);
-  console.timeEnd("IABMappingTime - Through Prompt");
+  console.time("IABMappingTime");
+  const iabCategories = mapToIABCategories(processedSummary);
+  console.timeEnd("IABMappingTime");
   
   // Store categories in localStorage if valid
-  if (iabCategoriesThroughPrompt && iabCategoriesThroughPrompt.length > 0) {
-    storeIabCategories(iabCategoriesThroughPrompt, window.location.href);
+  if (iabCategories && iabCategories.length > 0) {
+    storeIabCategories(iabCategories, window.location.href);
   } else {
     logMessage(`${CONSTANTS.LOG_PRE_FIX} No valid IAB categories found for this page`);
   }
+
+  // Map the processed summary to IAB categories
+  // console.time("IABMappingTime - Through Prompt");
+  // const iabCategoriesThroughPrompt = mapToIABCategories(processedSummaryThroughPrompt);
+  // console.timeEnd("IABMappingTime - Through Prompt");
+  
+  // // Store categories in localStorage if valid
+  // if (iabCategoriesThroughPrompt && iabCategoriesThroughPrompt.length > 0) {
+  //   storeIabCategories(iabCategoriesThroughPrompt, window.location.href);
+  // } else {
+  //   logMessage(`${CONSTANTS.LOG_PRE_FIX} No valid IAB categories found for this page`);
+  // }
 
    // Get sentiment analysis using Chrome AI if not already in localStorage
    let sentiment;
