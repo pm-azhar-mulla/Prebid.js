@@ -183,7 +183,10 @@ const translateToEnglish = async (text, sourceLanguage) => {
     }
     
     // Check capabilities
-    const translatorAvailability = await Translator.availability();
+    const translatorAvailability = await Translator.availability({
+      sourceLanguage: sourceLanguage,
+      targetLanguage: 'en',
+    });
     //const canTranslate = translatorAvailability.available;
     
     if (translatorAvailability === 'unavailable') {
