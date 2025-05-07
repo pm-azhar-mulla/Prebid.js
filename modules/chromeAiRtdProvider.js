@@ -365,7 +365,7 @@ const loadSentimentKeywords = async () => {
  */
 const analyzeSentiment = async (text) => {
 
-  console.log("Azzi>> text as input >> ", text);
+  console.log(">> text as input >> ", text);
   try {
     // Check if the Prompt API is available
     if (!LanguageModel) {
@@ -449,9 +449,9 @@ const analyzeSentiment = async (text) => {
       When in doubt, classify as negative. It is better to incorrectly classify neutral content as negative than to miss truly negative content.
     `;
 
-    // console.log("NS> prompt is >>> ", prompt);
-    console.log("NS> Positive Keywords >>> ", sentimentKeywords.positive);
-    console.log("NS> Negative Keywords >>> ", sentimentKeywords.negative);
+    // console.log("> prompt is >>> ", prompt);
+    console.log("> Positive Keywords >>> ", sentimentKeywords.positive);
+    console.log("> Negative Keywords >>> ", sentimentKeywords.negative);
     
     // Initialize the prompt API
     let promptApi;
@@ -473,7 +473,7 @@ const analyzeSentiment = async (text) => {
     }
     
     // Generate the response
-    console.log("Azzi prompt>>", promptApi);
+    console.log(" prompt>>", promptApi);
     const response = await promptApi.prompt('What is the sentiment analyisis for this page? give me answer in json format as specified in system prompt');
     console.log("response>>",response);
     console.timeEnd("sentimentAnalysisTime");
@@ -888,7 +888,7 @@ function mapToIABCategories(text) {
   
   // Track contextual signals for better categorization
   const contextualSignals = {
-    hasViolence: /\b(war|conflict|fight|battle|attack|bomb|kill|death|casualty|violence|weapon|military|assault)\b/gi.test(lowerText),
+    hasViolence: /\b(war|conflict|fight|battle|attack|bomb|kill|death|casualty|violence|weapon|military|assault|terror|terrorist|terrorism)\b/gi.test(lowerText),
     hasSports: /\b(sport|game|player|team|match|tournament|championship|league|score|win|coach|athlete|stadium|ball)\b/gi.test(lowerText),
     hasFinance: /\b(money|finance|economic|market|stock|invest|bank|dollar|euro|currency|trade|profit|budget|fiscal)\b/gi.test(lowerText),
     hasTech: /\b(technology|computer|software|hardware|digital|internet|app|mobile|device|data|code|program|online)\b/gi.test(lowerText),
@@ -925,7 +925,7 @@ function mapToIABCategories(text) {
       case 'IAB11': // Law, Government & Politics
         if (contextualSignals.hasPolitics) contextMultiplier = 1.5;
         break;
-      case 'IAB13': // News
+      case 'IAB12': // News
         // News about specific topics should be categorized by the topic first
         if (contextualSignals.hasViolence || contextualSignals.hasPolitics || contextualSignals.hasFinance) contextMultiplier = 0.8;
         else contextMultiplier = 1.2;
@@ -1021,7 +1021,7 @@ function mapToIABCategories(text) {
   } else if (sortedMatches.length === 1) {
     // If we only have one match, use it and add a fallback category
     topCategories = [sortedMatches[0], {
-      code: 'IAB13', // News as fallback
+      code: 'IAB12', // News as fallback
       name: 'News',
       score: sortedMatches[0].score * 0.7,
       confidence: 0.7 * sortedMatches[0].confidence
@@ -1030,7 +1030,7 @@ function mapToIABCategories(text) {
     // If no matches at all, provide exactly two default categories
     topCategories = [
       {
-        code: 'IAB13', // News
+        code: 'IAB12', // News
         name: 'News',
         score: 5,
         confidence: 0.7
