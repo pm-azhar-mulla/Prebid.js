@@ -639,11 +639,25 @@ const getAdContentRatio = () => {
     }
     totalAdArea += area;
   });
-  // Calculate viewport area as reference
-  const viewportArea = window.innerWidth * window.innerHeight;
+  // Calculate total page area
+  const pageWidth = Math.max(
+    document.documentElement.scrollWidth,
+    document.documentElement.offsetWidth,
+    document.documentElement.clientWidth,
+    document.body.scrollWidth,
+    document.body.offsetWidth
+  );
+  const pageHeight = Math.max(
+    document.documentElement.scrollHeight,
+    document.documentElement.offsetHeight,
+    document.documentElement.clientHeight,
+    document.body.scrollHeight,
+    document.body.offsetHeight
+  );
+  const totalPageArea = pageWidth * pageHeight;
 
   // Calculate ratios
-  const areaRatio = Math.round((totalAdArea / viewportArea) * 100);
+  const areaRatio = Math.round((totalAdArea / totalPageArea) * 100);
   // const countRatio = (adUnits.length / Math.max(1, document.body.children.length)) * 100;
   return areaRatio;
 }
