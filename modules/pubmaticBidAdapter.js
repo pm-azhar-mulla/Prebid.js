@@ -631,19 +631,53 @@ const getAdContentRatio = () => {
     const element = document.getElementById(adUnit.code);
     let area = 0;
     
-    // Calculate area based on defined sizes in mediaTypes
-    if (adUnit.mediaTypes && adUnit.mediaTypes.banner && adUnit.mediaTypes.banner.sizes) {
-      // Get the first size as default
-      const [width, height] = adUnit.mediaTypes.banner.sizes[0];
-      area = width * height;
+    // Calculate maximum area across all media types
+    if (adUnit.mediaTypes) {
+      let maxArea = 0;
+
+      // Handle banner sizes
+      if (adUnit.mediaTypes.banner && adUnit.mediaTypes.banner.sizes) {
+        adUnit.mediaTypes.banner.sizes.forEach(([width, height]) => {
+          const currentArea = width * height;
+          maxArea = Math.max(maxArea, currentArea);
+        });
+      }
+
+      // Handle video sizes
+      if (adUnit.mediaTypes.video) {
+        // Check playerSize
+        if (Array.isArray(adUnit.mediaTypes.video.playerSize)) {
+          const playerSizes = Array.isArray(adUnit.mediaTypes.video.playerSize[0])
+            ? adUnit.mediaTypes.video.playerSize
+            : [adUnit.mediaTypes.video.playerSize];
+          
+          playerSizes.forEach(([width, height]) => {
+            const currentArea = width * height;
+            maxArea = Math.max(maxArea, currentArea);
+          });
+        }
+      }
+
+      // Handle native sizes if available
+      if (adUnit.mediaTypes.native) {
+        // Some native ads might have image size requirements
+        const image = adUnit.mediaTypes.native.image;
+        if (image && image.sizes) {
+          const [width, height] = Array.isArray(image.sizes[0]) ? image.sizes[0] : image.sizes;
+          const currentArea = width * height;
+          maxArea = Math.max(maxArea, currentArea);
+        }
+      }
+
+      area = maxArea;
     }
     totalAdArea += area;
   });
-  // Calculate viewport area as reference
-  const viewportArea = window.innerWidth * window.innerHeight;
+  
+  const totalPageArea = document.body.clientWidth * document.body.clientHeight;
 
   // Calculate ratios
-  const areaRatio = Math.round((totalAdArea / viewportArea) * 100);
+  const areaRatio = Math.round((totalAdArea / totalPageArea) * 100);
   // const countRatio = (adUnits.length / Math.max(1, document.body.children.length)) * 100;
   return areaRatio;
 }
