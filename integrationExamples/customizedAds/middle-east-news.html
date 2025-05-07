@@ -89,6 +89,20 @@
                            },
                        ],
                    },
+                   userSync: {
+                      userIds: [{
+                        name: "pubmaticId",
+                        params: {
+                          publisherId: 123456 // Example ID
+                        },
+                        storage: {
+                          name: "pubmaticId",
+                          type: "html5",
+                          expires: 30,
+                          refreshInSeconds: 86400
+                        }
+                      }]
+                    }
                });
                 pbjs.addAdUnits(adUnits);
                 pbjs.requestBids({

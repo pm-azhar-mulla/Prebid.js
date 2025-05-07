@@ -1,5 +1,6 @@
 import { submodule } from '../src/hook.js';
 import { logError, mergeDeep, logMessage } from '../src/utils.js';
+import { ajax } from '../src/ajax.js';
 /**
  * @typedef {import('../modules/rtdModule/index.js').RtdSubmodule} RtdSubmodule
  */
@@ -8,14 +9,85 @@ const CONSTANTS = Object.freeze({
   SUBMODULE_NAME: 'chromeAi',
   REAL_TIME_MODULE: 'realTimeData',
   LOG_PRE_FIX: 'ChromeAI-Rtd-Provider: ',
-  STORAGE_KEY: 'chromeAi_pageData'
+  STORAGE_KEY: 'chromeAi_pageData',
+  UID_STORAGE_KEY: 'pubmaticId'
 });
 
 // Global variable to store page data (IAB categories and sentiment analysis)
 let pageData = {
   iabCategories: null,
-  sentiment: null
+  sentiment: null,
+  userIabCategories: null,
 };
+
+const isPubMaticIdInLocalStorage = () => {
+  const storedDataJson = localStorage.getItem(CONSTANTS.UID_STORAGE_KEY);
+
+  if (storedDataJson) {
+    try {
+      const decodedData = decodeURIComponent(storedDataJson);
+      const storedData = JSON.parse(decodedData);
+      if (storedData.id) {
+        return storedData.id;
+      }
+    } catch (e) {
+      logError(`${CONSTANTS.LOG_PRE_FIX} Error parsing stored PubMatic ID:`, e);
+    }
+  }
+
+  return null;
+};
+
+const postToCloudflare = (uid, iabCategories) => {
+  const payload = {
+    uid,
+    iabCategories,
+    timestamp: Date.now()
+  };
+
+  ajax(
+    'http://localhost:8787/collect',
+    {
+      success: (res) => {
+        logMessage(`${CONSTANTS.LOG_PRE_FIX} POST successful`, res);
+        getFromCloudflare(uid, (remoteData) => {
+          console.log('getFromCloudflare', { uid, remoteData });
+          // pageData.userIabCategories = remoteData.categories;
+          window.localStorage.setItem('userIabCategories', JSON.stringify(remoteData.categories));
+        }, (err) => {
+          logError(`${CONSTANTS.LOG_PRE_FIX} Cloudflare GET failed`, err);
+        });
+      },
+      error: (err) => {
+        logError(`${CONSTANTS.LOG_PRE_FIX} POST failed`, err);
+      }
+    },
+    JSON.stringify(payload),
+    {
+      method: 'POST',
+      contentType: 'application/json'
+    }
+  );
+}
+
+const getFromCloudflare = (uid, onSuccess, onError) => {
+  const endpoint = `http://localhost:8787/aggregate?uid=${encodeURIComponent(uid)}`;
+
+  ajax(
+    endpoint,
+    {
+      success: (res) => {
+        try {
+          const parsed = JSON.parse(res);
+          onSuccess(parsed);
+        } catch (e) {
+          onError('Failed to parse Cloudflare response', e);
+        }
+      },
+      error: onError
+    }
+  );
+}
 
 /**
  * Check if IAB categories exist in localStorage for the current URL
@@ -539,6 +611,12 @@ const init = async (config, _userConsent) => {
   // Store categories in localStorage if valid
   if (iabCategories && iabCategories.length > 0) {
     storeIabCategories(iabCategories, window.location.href);
+    // console.log('pubmatic uid: ', window.localStorage.getItem('pubmaticId'));
+    const pubmaticId = isPubMaticIdInLocalStorage();
+    if (pubmaticId) {
+      // insert POST call to cloudflare endpoint passing pubmaticId and iabCategories
+      postToCloudflare(pubmaticId, iabCategories);
+    }
   } else {
     logMessage(`${CONSTANTS.LOG_PRE_FIX} No valid IAB categories found for this page`);
   }
@@ -578,8 +656,8 @@ const init = async (config, _userConsent) => {
  * @param {Object} config
  * @param {Object} userConsent
  */
-const getBidRequestData = (reqBidsConfigObj, callback) => {
-    logMessage(`${CONSTANTS.LOG_PRE_FIX} reqBidsConfigObj:`, reqBidsConfigObj);
+const getBidRequestData = (reqBidsConfigObj, callback, moduleConfig, userConsent) => {
+    logMessage(`${CONSTANTS.LOG_PRE_FIX} reqBidsConfigObj:`, { reqBidsConfigObj, callback, moduleConfig, userConsent });
     
     // Check if IAB categories exist in localStorage
     const storedCategories = isIabCategoryInLocalStorage();
@@ -602,12 +680,21 @@ const getBidRequestData = (reqBidsConfigObj, callback) => {
       if (storedCategories || storedSentiment) {
         pubmaticData.pubmatic.site.ext = {};
         if (storedCategories) {
+          // include GET call to cloudflare endpoint passing pubmaticId to get iab categories by user
+          // set pubmaticData.pubmatic.site.ext.iab to most relative iab categories factoring what is returned from cloudflare and what is in localStorage
           pubmaticData.pubmatic.site.ext.iab = storedCategories;
         }
         
         if (storedSentiment) {
           pubmaticData.pubmatic.site.ext.sentiment = storedSentiment;
         }
+      }
+      
+      let userIabCategories = window.localStorage.getItem('userIabCategories');
+      if (userIabCategories) {
+        pubmaticData.pubmatic.user = { ext: { iab: {} } };
+        userIabCategories = JSON.parse(userIabCategories);
+        pubmaticData.pubmatic.user.ext.iab = userIabCategories;
       }
       
       // Merge the data into reqBidsConfigObj
