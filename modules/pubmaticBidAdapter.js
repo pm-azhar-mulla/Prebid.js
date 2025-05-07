@@ -7,6 +7,7 @@ import { bidderSettings } from '../src/bidderSettings.js';
 import { ortbConverter } from '../libraries/ortbConverter/converter.js';
 import { NATIVE_ASSET_TYPES, NATIVE_IMAGE_TYPES, PREBID_NATIVE_DATA_KEYS_TO_ORTB, NATIVE_KEYS_THAT_ARE_NOT_ASSETS, NATIVE_KEYS } from '../src/constants.js';
 import { percentInView } from '../libraries/percentInView/percentInView.js';
+import { getGlobal } from '../src/prebidGlobal.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -496,6 +497,157 @@ const updateResponseWithCustomFields = (res, bid, ctx) => {
   }
 }
 
+const STORAGE_KEY = 'pubmatic_throttle';
+
+// Throttling configuration
+const THROTTLE_CONFIG = {
+  '4G': { 
+    requestThreshold: 10,
+    minResponseRatio: 0.4,
+    throttlePercentage: 50  // Throttle 50% requests when below ratio
+  },
+  '3G': { 
+    requestThreshold: 8,
+    minResponseRatio: 0.3,
+    throttlePercentage: 70  // Throttle 70% requests when below ratio
+  },
+  '2G': { 
+    requestThreshold: 6,
+    minResponseRatio: 0.2,
+    throttlePercentage: 90  // Throttle 90% requests when below ratio
+  },
+  'WIFI': { 
+    requestThreshold: 12,
+    minResponseRatio: 0.5,
+    throttlePercentage: 50  // Throttle 50% requests when below ratio
+  },
+  'ETHERNET': { 
+    requestThreshold: 15,
+    minResponseRatio: 0.6,
+    throttlePercentage: 30  // Throttle only 30% requests when below ratio
+  },
+  'UNKNOWN': { 
+    requestThreshold: 8,
+    minResponseRatio: 0.3,
+    throttlePercentage: 70  // Default throttle percentage
+  }
+};
+
+const CONNECTION_TYPES = {
+  0: 'UNKNOWN',
+  1: 'ETHERNET',
+  2: 'WIFI',
+  4: '2G',
+  5: '3G',
+  6: '4G'
+};
+
+const getThrottleData = () => {
+  const stored = localStorage.getItem(STORAGE_KEY);
+  if (!stored) {
+    // Initialize with all possible connection types
+    const initial = Object.values(CONNECTION_TYPES).reduce((acc, type) => {
+      acc[type] = {
+        numberOfRequests: 0,
+        numberOfResponses: 0
+      };
+      return acc;
+    }, {});
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(initial));
+    return initial;
+  }
+  return JSON.parse(stored);
+};
+
+const shouldThrottleRequests = () => {
+  const data = getThrottleData();
+  const connectionTypeCode = getConnectionType();
+  const connectionType = CONNECTION_TYPES[connectionTypeCode] || CONNECTION_TYPES[0];
+  const metrics = data[connectionType];
+  const config = THROTTLE_CONFIG[connectionType];
+
+  if (!metrics || !config) return false;
+
+  // Check if we've hit the request threshold
+  if (metrics.numberOfRequests >= config.requestThreshold) {
+    // Calculate response ratio
+    const responseRatio = metrics.numberOfResponses / metrics.numberOfRequests;
+    
+    // If response ratio is below threshold, apply partial throttling
+    if (responseRatio < config.minResponseRatio) {
+      // Generate random number between 0 and 100
+      const random = Math.random() * 100;
+      
+      // Check against connection-specific throttle percentage
+      const shouldThrottle = random < config.throttlePercentage;
+      
+      logInfo('PubMatic: Throttling Check -', {
+        connectionType,
+        requests: metrics.numberOfRequests,
+        responses: metrics.numberOfResponses,
+        ratio: responseRatio,
+        threshold: config.minResponseRatio,
+        throttlePercentage: config.throttlePercentage,
+        random: random,
+        throttled: shouldThrottle,
+        message: `Request ${shouldThrottle ? 'throttled' : 'allowed'} (${config.throttlePercentage}% throttle rate)`
+      });
+      
+      return shouldThrottle;
+    }
+  }
+  return false;
+};
+
+const updateThrottleData = (type) => {
+  const data = getThrottleData();
+  const connectionTypeCode = getConnectionType();
+  const connectionType = CONNECTION_TYPES[connectionTypeCode] || CONNECTION_TYPES[0];
+
+  // Initialize this connection type if it doesn't exist
+  if (!data[connectionType]) {
+    data[connectionType] = {
+      numberOfRequests: 0,
+      numberOfResponses: 0
+    };
+  }
+
+  // Update counters for current connection type
+  if (type === 'request') {
+    data[connectionType].numberOfRequests++;
+  } else if (type === 'response') {
+    data[connectionType].numberOfResponses++;
+  }
+
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+  logInfo('PubMatic: Connection Type:', connectionType, 'Metrics:', data[connectionType]);
+  return data;
+};
+
+const getAdContentRatio = () => {
+  let totalAdArea = 0;
+  getGlobal().adUnits.forEach(adUnit => {
+    // Get the element by ad unit code
+    const element = document.getElementById(adUnit.code);
+    let area = 0;
+    
+    // Calculate area based on defined sizes in mediaTypes
+    if (adUnit.mediaTypes && adUnit.mediaTypes.banner && adUnit.mediaTypes.banner.sizes) {
+      // Get the first size as default
+      const [width, height] = adUnit.mediaTypes.banner.sizes[0];
+      area = width * height;
+    }
+    totalAdArea += area;
+  });
+  // Calculate viewport area as reference
+  const viewportArea = window.innerWidth * window.innerHeight;
+
+  // Calculate ratios
+  const areaRatio = Math.round((totalAdArea / viewportArea) * 100);
+  // const countRatio = (adUnits.length / Math.max(1, document.body.children.length)) * 100;
+  return areaRatio;
+}
+
 const addExtenstionParams = (req) => {
   const { profId, verId, wiid, transactionId } = conf;
   req.ext = {
@@ -506,7 +658,9 @@ const addExtenstionParams = (req) => {
       wiid: wiid,
       wv: '$$REPO_AND_VERSION$$',
       transactionId,
-      wp: 'pbjs'
+      wp: 'pbjs',
+      noOfSlots: getGlobal().adUnits.length,
+      adContentRatio: getAdContentRatio()
     },
     cpmAdjustment: cpmAdjustment
   }
@@ -769,6 +923,18 @@ export const spec = {
    * @return ServerRequest Info describing the request to the server.
    */
   buildRequests: (validBidRequests, bidderRequest) => {
+    if (!validBidRequests || !validBidRequests.length || !bidderRequest) {
+      return null;
+    }
+
+    // Check if we should throttle requests
+    if (shouldThrottleRequests()) {
+      return null;
+    }
+
+    // Update request counter
+    const throttleData = updateThrottleData('request');
+    logInfo('PubMatic: Throttle Data Updated - Requests:', throttleData);
     const { page, ref } = bidderRequest?.refererInfo || {};
     const { publisherId, profId, verId } = bidderRequest?.bids?.[0]?.params || {};
     pubId = publisherId?.trim() || getPublisherId(bidderRequest?.bids)?.trim();
@@ -799,6 +965,7 @@ export const spec = {
     })
     const data = converter.toORTB({ validBidRequests, bidderRequest });
 
+    
     let serverRequest = {
       method: 'POST',
       url: ENDPOINT,
@@ -817,6 +984,15 @@ export const spec = {
   interpretResponse: (response, request) => {
     const { bids } = converter.fromORTB({ response: response.body, request: request.data });
     const fledgeAuctionConfigs = deepAccess(response.body, 'ext.fledge_auction_configs');
+    
+    // Only update response counter if we have valid bids
+    if (response.body?.seatbid?.length > 0) {
+      const throttleData = updateThrottleData('response');
+      logInfo('PubMatic: Throttle Data Updated - Valid Response with Bids:', throttleData);
+    } else {
+      logInfo('PubMatic: No valid bids in response, skipping throttle data update');
+    }
+
     if (fledgeAuctionConfigs) {
       return {
         bids,
