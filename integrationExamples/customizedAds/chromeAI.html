@@ -13,364 +13,390 @@
 	- if adUnit has mentioned the alias in bids, then when bidder is called for alias then the bidder can choose to do nothing
  -->
 
- <html>
-    <head>
-        <script async src="../../build/dev/prebid.js"></script>
-        <script async src="https://www.googletagservices.com/tag/js/gpt.js"></script>
-        <script>
-            var FAILSAFE_TIMEOUT = 3300;
-            var PREBID_TIMEOUT = 3000;
-    
-            var adUnits = [{
-                code: 'div-gpt-ad-1460505748561-0',
-                mediaTypes: {
-                    banner: {
-                        sizes: [[728,90]],
-                    }
-                },            
-                // Replace this object to test a new Adapter!
-                bids: [{
-                        bidder: 'pubmatic',
-                        params: {
-                            publisherId: '103207',
-                            adUnit: 'dcomHomeTop-728x90'
-                        },
-                    },
-                    {bidder: "appnexus",
-                    params: {placementId: '8801674'}
-                      }
-    
-                ]
-            }];
-    
-            var pbjs = pbjs || {};
-            pbjs.que = pbjs.que || [];
-    
-        </script>
-    
-        <script>
-            var googletag = googletag || {};
-            googletag.cmd = googletag.cmd || [];
-            googletag.cmd.push(function() {
-                googletag.pubads().disableInitialLoad();
-            });
-    
-            pbjs.que.push(function() {
-    
-                pbjs.setConfig({
-                    enableTIDs: true,
-                    owCustomizedAds:{
-                        stickyAds: {
-                            enabled: true,
-                            divs: ["div-gpt-ad-1460505748561-0"]
-                        }
-                    },
-                    realTimeData: {
-                        auctionDelay: 300,
-                        dataProviders: [
-                            {
-                                name: "chromeAi",
-                                waitForIt: false,
-                                params: {
-                                    publisherId: "Azzi", // please contact PubMatic to get a publisherId for yourself
-                                },
-                            },
-                        ],
-                    },
-                });
-                pbjs.addAdUnits(adUnits);
-                pbjs.enableAnalytics({
-                    provider: 'pubmatic',
-                    options: {
-                        "publisherId": 103207 // please contact PubMatic to get a publisherId for yourself
-                    }
-                });
-                pbjs.requestBids({
-                    bidsBackHandler: sendAdserverRequest,
-                    timeout: PREBID_TIMEOUT
-                });
-            });
-    
-            function sendAdserverRequest() {
-                if (pbjs.adserverRequestSent) return;
-                pbjs.adserverRequestSent = true;
-                googletag.cmd.push(function() {
-                    pbjs.que.push(function() {
-                        pbjs.setTargetingForGPTAsync();
-                        googletag.pubads().refresh();
-                    });
-                });
-            }
-    
-            setTimeout(function() {
-                sendAdserverRequest();
-            }, FAILSAFE_TIMEOUT);
-    
-        </script>
-    
-        <script>
-            googletag.cmd.push(function () {
-                googletag.defineSlot('/19968336/header-bid-tag-0', [[728, 90], [300, 250]], 'div-gpt-ad-1460505748561-0').addService(googletag.pubads());
-    
-                googletag.pubads().enableSingleRequest();
-                googletag.enableServices();
-            });
-        </script>
-        
-        <script>
-            /**
-             * Calculates the remaining space in an element after its content has been rendered
-             * @param {HTMLElement} element - The element to check
-             * @returns {Object} - Object containing information about remaining space
-             */
-            function calculateRemainingSpace(element) {
-                if (!element) {
-                    console.error('Element not found');
-                    return null;
-                }
-                
-                // Get element dimensions
-                const elementRect = element.getBoundingClientRect();
-                
-                // Get all direct child elements
-                const children = Array.from(element.children);
-                
-                // If no children, all space is available
-                if (children.length === 0) {
-                    return {
-                        totalWidth: elementRect.width,
-                        totalHeight: elementRect.height,
-                        occupiedWidth: 0,
-                        occupiedHeight: 0,
-                        remainingWidth: elementRect.width,
-                        remainingHeight: elementRect.height,
-                        occupiedArea: 0,
-                        totalArea: elementRect.width * elementRect.height,
-                        remainingArea: elementRect.width * elementRect.height,
-                        percentOccupied: 0,
-                        percentRemaining: 100
-                    };
-                }
-                
-                // Calculate occupied space by children
-                let occupiedArea = 0;
-                let maxOccupiedWidth = 0;
-                let maxOccupiedHeight = 0;
-                let childrenBounds = [];
-                
-                children.forEach(child => {
-                    // Skip text nodes and comment nodes
-                    if (child.nodeType !== Node.ELEMENT_NODE) return;
-                    
-                    // Get child dimensions relative to parent
-                    const childRect = child.getBoundingClientRect();
-                    
-                    // Calculate child position relative to parent
-                    const relativeRect = {
-                        top: childRect.top - elementRect.top,
-                        right: childRect.right - elementRect.left,
-                        bottom: childRect.bottom - elementRect.top,
-                        left: childRect.left - elementRect.left,
-                        width: childRect.width,
-                        height: childRect.height
-                    };
-                    
-                    childrenBounds.push(relativeRect);
-                    
-                    // Update maximum occupied dimensions
-                    maxOccupiedWidth = Math.max(maxOccupiedWidth, relativeRect.right);
-                    maxOccupiedHeight = Math.max(maxOccupiedHeight, relativeRect.bottom);
-                    
-                    // Add to occupied area
-                    occupiedArea += (childRect.width * childRect.height);
-                });
-                
-                // Calculate total and remaining space
-                const totalArea = elementRect.width * elementRect.height;
-                const remainingArea = totalArea - occupiedArea;
-                const percentOccupied = (occupiedArea / totalArea) * 100;
-                const percentRemaining = 100 - percentOccupied;
-                
-                // Calculate remaining width and height
-                const remainingWidth = elementRect.width - maxOccupiedWidth;
-                const remainingHeight = elementRect.height - maxOccupiedHeight;
-                
-                // Find empty regions
-                const emptyRegions = findEmptyRegions(elementRect, childrenBounds);
-                
-                return {
-                    totalWidth: elementRect.width,
-                    totalHeight: elementRect.height,
-                    occupiedWidth: maxOccupiedWidth,
-                    occupiedHeight: maxOccupiedHeight,
-                    remainingWidth: remainingWidth,
-                    remainingHeight: remainingHeight,
-                    occupiedArea: occupiedArea,
-                    totalArea: totalArea,
-                    remainingArea: remainingArea,
-                    percentOccupied: percentOccupied,
-                    percentRemaining: percentRemaining,
-                    emptyRegions: emptyRegions
-                };
-            }
-            
-            /**
-             * Finds empty regions in an element after content has been rendered
-             * @param {DOMRect} parentRect - The parent element's bounding rectangle
-             * @param {Array} childrenBounds - Array of child element bounds
-             * @returns {Array} - Array of empty regions with their dimensions
-             */
-            function findEmptyRegions(parentRect, childrenBounds) {
-                // Simple approach: identify major empty regions
-                
-                if (childrenBounds.length === 0) {
-                    return [{
-                        position: 'full',
-                        width: parentRect.width,
-                        height: parentRect.height,
-                        area: parentRect.width * parentRect.height
-                    }];
-                }
-                
-                // Find boundaries of all content
-                let minTop = parentRect.height;
-                let maxBottom = 0;
-                let minLeft = parentRect.width;
-                let maxRight = 0;
-                
-                childrenBounds.forEach(bounds => {
-                    minTop = Math.min(minTop, bounds.top);
-                    maxBottom = Math.max(maxBottom, bounds.bottom);
-                    minLeft = Math.min(minLeft, bounds.left);
-                    maxRight = Math.max(maxRight, bounds.right);
-                });
-                
-                // Calculate empty regions
-                const emptyRegions = [];
-                
-                // Top region
-                if (minTop > 0) {
-                    emptyRegions.push({
-                        position: 'top',
-                        x: 0,
-                        y: 0,
-                        width: parentRect.width,
-                        height: minTop,
-                        area: parentRect.width * minTop
-                    });
-                }
-                
-                // Bottom region
-                if (maxBottom < parentRect.height) {
-                    emptyRegions.push({
-                        position: 'bottom',
-                        x: 0,
-                        y: maxBottom,
-                        width: parentRect.width,
-                        height: parentRect.height - maxBottom,
-                        area: parentRect.width * (parentRect.height - maxBottom)
-                    });
-                }
-                
-                // Left region (excluding overlap with top and bottom)
-                if (minLeft > 0) {
-                    emptyRegions.push({
-                        position: 'left',
-                        x: 0,
-                        y: minTop,
-                        width: minLeft,
-                        height: maxBottom - minTop,
-                        area: minLeft * (maxBottom - minTop)
-                    });
-                }
-                
-                // Right region (excluding overlap with top and bottom)
-                if (maxRight < parentRect.width) {
-                    emptyRegions.push({
-                        position: 'right',
-                        x: maxRight,
-                        y: minTop,
-                        width: parentRect.width - maxRight,
-                        height: maxBottom - minTop,
-                        area: (parentRect.width - maxRight) * (maxBottom - minTop)
-                    });
-                }
-                
-                // Sort regions by area (largest first)
-                return emptyRegions.sort((a, b) => b.area - a.area);
-            }
-        </script>
-    </head>
-    
-    <body>
-    <h2>ChromeAI Test</h2>
-    <div id='div-gpt-ad-1460505748561-0' style="width:100%; height:300px; background-color: #faf2f3;">
-        <script type='text/javascript'>
-            googletag.cmd.push(function() { googletag.display('div-gpt-ad-1460505748561-0'); });
-        </script>
-    </div>
-    <div class="news-section">
-        <h3>Latest News Headlines</h3>
-        
-        <article class="news-item">
-            <h4>Global Tech Summit Announces Breakthrough in AI Development</h4>
-            <p>The annual Global Tech Summit concluded yesterday with a major announcement from leading researchers who have developed a new neural network architecture that promises to reduce computational requirements by up to 40% while maintaining accuracy. Industry leaders are already planning implementations that could revolutionize mobile AI applications.</p>
-            <p>"This represents a significant leap forward in making advanced AI accessible on everyday devices," said Dr. Sarah Chen, lead researcher at the Institute for Advanced Computing. "We expect to see this technology in consumer products within the next 18 months."</p>
-            <p class="news-meta">Published: April 15, 2025 | Category: Technology</p>
-        </article>
-        
-        <article class="news-item">
-            <h4>Climate Agreement Reaches Milestone as 150 Nations Commit to New Emissions Targets</h4>
-            <p>In a historic development for environmental policy, 150 nations have signed onto the expanded Global Climate Accord, committing to more aggressive emissions reduction targets by 2035. The agreement includes significant financial commitments to support developing nations in their transition to renewable energy sources.</p>
-            <p>Environmental experts have praised the move but caution that implementation will be the true test. "The targets are ambitious and necessary," noted climate scientist Dr. James Rivera. "But the real challenge lies in the policy changes required to meet these goals."</p>
-            <p class="news-meta">Published: April 14, 2025 | Category: Environment</p>
-        </article>
-    </div>
+<html>
 
-    <style>
-        .news-section {
-            max-width: 800px;
-            margin: 30px auto;
-            padding: 20px;
-            background-color: #f8f9fa;
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+<head>
+  <script async src="../../build/dev/prebid.js"></script>
+  <script async src="https://www.googletagservices.com/tag/js/gpt.js"></script>
+  <script>
+    var FAILSAFE_TIMEOUT = 3300;
+    var PREBID_TIMEOUT = 3000;
+
+    var adUnits = [{
+      code: 'div-gpt-ad-1460505748561-0',
+      mediaTypes: {
+        banner: {
+          sizes: [[728, 90]],
         }
-        
-        .news-section h3 {
-            color: #333;
-            border-bottom: 2px solid #ddd;
-            padding-bottom: 10px;
-            margin-bottom: 20px;
+      },
+      // Replace this object to test a new Adapter!
+      bids: [{
+        bidder: 'pubmatic',
+        params: {
+          publisherId: '103207',
+          adUnit: 'dcomHomeTop-728x90'
+        },
+      },
+      {
+        bidder: "appnexus",
+        params: { placementId: '8801674' }
+      }
+
+      ]
+    }];
+
+    var pbjs = pbjs || {};
+    pbjs.que = pbjs.que || [];
+
+  </script>
+
+  <script>
+    var googletag = googletag || {};
+    googletag.cmd = googletag.cmd || [];
+    googletag.cmd.push(function () {
+      googletag.pubads().disableInitialLoad();
+    });
+
+    pbjs.que.push(function () {
+
+      pbjs.setConfig({
+        enableTIDs: true,
+        owCustomizedAds: {
+          stickyAds: {
+            enabled: true,
+            divs: ["div-gpt-ad-1460505748561-0"]
+          }
+        },
+        realTimeData: {
+          auctionDelay: 300,
+          dataProviders: [
+            {
+              name: "chromeAi",
+              waitForIt: false,
+              params: {
+                publisherId: "Azzi", // please contact PubMatic to get a publisherId for yourself
+              },
+            },
+          ],
+        },
+        userSync: {
+          userIds: [{
+            name: "pubmaticId",
+            params: {
+              publisherId: 123456 // Example ID
+            },
+            storage: {
+              name: "pubmaticId",
+              type: "html5",
+              expires: 30,
+              refreshInSeconds: 86400
+            }
+          }]
         }
-        
-        .news-item {
-            margin-bottom: 25px;
-            padding-bottom: 20px;
-            border-bottom: 1px solid #eee;
+      });
+      pbjs.addAdUnits(adUnits);
+      pbjs.enableAnalytics({
+        provider: 'pubmatic',
+        options: {
+          "publisherId": 103207 // please contact PubMatic to get a publisherId for yourself
         }
-        
-        .news-item:last-child {
-            border-bottom: none;
-            margin-bottom: 0;
-        }
-        
-        .news-item h4 {
-            color: #006D77;
-            margin-bottom: 10px;
-        }
-        
-        .news-item p {
-            line-height: 1.6;
-            color: #444;
-        }
-        
-        .news-meta {
-            font-size: 0.8em;
-            color: #777;
-            margin-top: 10px;
-            font-style: italic;
-        }
-    </style>
-    </body>
-    </html>
+      });
+      pbjs.requestBids({
+        bidsBackHandler: sendAdserverRequest,
+        timeout: PREBID_TIMEOUT
+      });
+    });
+
+    function sendAdserverRequest() {
+      if (pbjs.adserverRequestSent) return;
+      pbjs.adserverRequestSent = true;
+      googletag.cmd.push(function () {
+        pbjs.que.push(function () {
+          pbjs.setTargetingForGPTAsync();
+          googletag.pubads().refresh();
+        });
+      });
+    }
+
+    setTimeout(function () {
+      sendAdserverRequest();
+    }, FAILSAFE_TIMEOUT);
+
+  </script>
+
+  <script>
+    googletag.cmd.push(function () {
+      googletag.defineSlot('/19968336/header-bid-tag-0', [[728, 90], [300, 250]], 'div-gpt-ad-1460505748561-0').addService(googletag.pubads());
+
+      googletag.pubads().enableSingleRequest();
+      googletag.enableServices();
+    });
+  </script>
+
+  <script>
+    /**
+     * Calculates the remaining space in an element after its content has been rendered
+     * @param {HTMLElement} element - The element to check
+     * @returns {Object} - Object containing information about remaining space
+     */
+    function calculateRemainingSpace(element) {
+      if (!element) {
+        console.error('Element not found');
+        return null;
+      }
+
+      // Get element dimensions
+      const elementRect = element.getBoundingClientRect();
+
+      // Get all direct child elements
+      const children = Array.from(element.children);
+
+      // If no children, all space is available
+      if (children.length === 0) {
+        return {
+          totalWidth: elementRect.width,
+          totalHeight: elementRect.height,
+          occupiedWidth: 0,
+          occupiedHeight: 0,
+          remainingWidth: elementRect.width,
+          remainingHeight: elementRect.height,
+          occupiedArea: 0,
+          totalArea: elementRect.width * elementRect.height,
+          remainingArea: elementRect.width * elementRect.height,
+          percentOccupied: 0,
+          percentRemaining: 100
+        };
+      }
+
+      // Calculate occupied space by children
+      let occupiedArea = 0;
+      let maxOccupiedWidth = 0;
+      let maxOccupiedHeight = 0;
+      let childrenBounds = [];
+
+      children.forEach(child => {
+        // Skip text nodes and comment nodes
+        if (child.nodeType !== Node.ELEMENT_NODE) return;
+
+        // Get child dimensions relative to parent
+        const childRect = child.getBoundingClientRect();
+
+        // Calculate child position relative to parent
+        const relativeRect = {
+          top: childRect.top - elementRect.top,
+          right: childRect.right - elementRect.left,
+          bottom: childRect.bottom - elementRect.top,
+          left: childRect.left - elementRect.left,
+          width: childRect.width,
+          height: childRect.height
+        };
+
+        childrenBounds.push(relativeRect);
+
+        // Update maximum occupied dimensions
+        maxOccupiedWidth = Math.max(maxOccupiedWidth, relativeRect.right);
+        maxOccupiedHeight = Math.max(maxOccupiedHeight, relativeRect.bottom);
+
+        // Add to occupied area
+        occupiedArea += (childRect.width * childRect.height);
+      });
+
+      // Calculate total and remaining space
+      const totalArea = elementRect.width * elementRect.height;
+      const remainingArea = totalArea - occupiedArea;
+      const percentOccupied = (occupiedArea / totalArea) * 100;
+      const percentRemaining = 100 - percentOccupied;
+
+      // Calculate remaining width and height
+      const remainingWidth = elementRect.width - maxOccupiedWidth;
+      const remainingHeight = elementRect.height - maxOccupiedHeight;
+
+      // Find empty regions
+      const emptyRegions = findEmptyRegions(elementRect, childrenBounds);
+
+      return {
+        totalWidth: elementRect.width,
+        totalHeight: elementRect.height,
+        occupiedWidth: maxOccupiedWidth,
+        occupiedHeight: maxOccupiedHeight,
+        remainingWidth: remainingWidth,
+        remainingHeight: remainingHeight,
+        occupiedArea: occupiedArea,
+        totalArea: totalArea,
+        remainingArea: remainingArea,
+        percentOccupied: percentOccupied,
+        percentRemaining: percentRemaining,
+        emptyRegions: emptyRegions
+      };
+    }
+
+    /**
+     * Finds empty regions in an element after content has been rendered
+     * @param {DOMRect} parentRect - The parent element's bounding rectangle
+     * @param {Array} childrenBounds - Array of child element bounds
+     * @returns {Array} - Array of empty regions with their dimensions
+     */
+    function findEmptyRegions(parentRect, childrenBounds) {
+      // Simple approach: identify major empty regions
+
+      if (childrenBounds.length === 0) {
+        return [{
+          position: 'full',
+          width: parentRect.width,
+          height: parentRect.height,
+          area: parentRect.width * parentRect.height
+        }];
+      }
+
+      // Find boundaries of all content
+      let minTop = parentRect.height;
+      let maxBottom = 0;
+      let minLeft = parentRect.width;
+      let maxRight = 0;
+
+      childrenBounds.forEach(bounds => {
+        minTop = Math.min(minTop, bounds.top);
+        maxBottom = Math.max(maxBottom, bounds.bottom);
+        minLeft = Math.min(minLeft, bounds.left);
+        maxRight = Math.max(maxRight, bounds.right);
+      });
+
+      // Calculate empty regions
+      const emptyRegions = [];
+
+      // Top region
+      if (minTop > 0) {
+        emptyRegions.push({
+          position: 'top',
+          x: 0,
+          y: 0,
+          width: parentRect.width,
+          height: minTop,
+          area: parentRect.width * minTop
+        });
+      }
+
+      // Bottom region
+      if (maxBottom < parentRect.height) {
+        emptyRegions.push({
+          position: 'bottom',
+          x: 0,
+          y: maxBottom,
+          width: parentRect.width,
+          height: parentRect.height - maxBottom,
+          area: parentRect.width * (parentRect.height - maxBottom)
+        });
+      }
+
+      // Left region (excluding overlap with top and bottom)
+      if (minLeft > 0) {
+        emptyRegions.push({
+          position: 'left',
+          x: 0,
+          y: minTop,
+          width: minLeft,
+          height: maxBottom - minTop,
+          area: minLeft * (maxBottom - minTop)
+        });
+      }
+
+      // Right region (excluding overlap with top and bottom)
+      if (maxRight < parentRect.width) {
+        emptyRegions.push({
+          position: 'right',
+          x: maxRight,
+          y: minTop,
+          width: parentRect.width - maxRight,
+          height: maxBottom - minTop,
+          area: (parentRect.width - maxRight) * (maxBottom - minTop)
+        });
+      }
+
+      // Sort regions by area (largest first)
+      return emptyRegions.sort((a, b) => b.area - a.area);
+    }
+  </script>
+</head>
+
+<body>
+  <h2>ChromeAI Test</h2>
+  <div id='div-gpt-ad-1460505748561-0' style="width:100%; height:300px; background-color: #faf2f3;">
+    <script type='text/javascript'>
+      googletag.cmd.push(function () { googletag.display('div-gpt-ad-1460505748561-0'); });
+    </script>
+  </div>
+  <div class="news-section">
+    <h3>Latest News Headlines</h3>
+
+    <article class="news-item">
+      <h4>Global Tech Summit Announces Breakthrough in AI Development</h4>
+      <p>The annual Global Tech Summit concluded yesterday with a major announcement from leading researchers who have
+        developed a new neural network architecture that promises to reduce computational requirements by up to 40%
+        while maintaining accuracy. Industry leaders are already planning implementations that could revolutionize
+        mobile AI applications.</p>
+      <p>"This represents a significant leap forward in making advanced AI accessible on everyday devices," said Dr.
+        Sarah Chen, lead researcher at the Institute for Advanced Computing. "We expect to see this technology in
+        consumer products within the next 18 months."</p>
+      <p class="news-meta">Published: April 15, 2025 | Category: Technology</p>
+    </article>
+
+    <article class="news-item">
+      <h4>Climate Agreement Reaches Milestone as 150 Nations Commit to New Emissions Targets</h4>
+      <p>In a historic development for environmental policy, 150 nations have signed onto the expanded Global Climate
+        Accord, committing to more aggressive emissions reduction targets by 2035. The agreement includes significant
+        financial commitments to support developing nations in their transition to renewable energy sources.</p>
+      <p>Environmental experts have praised the move but caution that implementation will be the true test. "The targets
+        are ambitious and necessary," noted climate scientist Dr. James Rivera. "But the real challenge lies in the
+        policy changes required to meet these goals."</p>
+      <p class="news-meta">Published: April 14, 2025 | Category: Environment</p>
+    </article>
+  </div>
+
+  <style>
+    .news-section {
+      max-width: 800px;
+      margin: 30px auto;
+      padding: 20px;
+      background-color: #f8f9fa;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+
+    .news-section h3 {
+      color: #333;
+      border-bottom: 2px solid #ddd;
+      padding-bottom: 10px;
+      margin-bottom: 20px;
+    }
+
+    .news-item {
+      margin-bottom: 25px;
+      padding-bottom: 20px;
+      border-bottom: 1px solid #eee;
+    }
+
+    .news-item:last-child {
+      border-bottom: none;
+      margin-bottom: 0;
+    }
+
+    .news-item h4 {
+      color: #006D77;
+      margin-bottom: 10px;
+    }
+
+    .news-item p {
+      line-height: 1.6;
+      color: #444;
+    }
+
+    .news-meta {
+      font-size: 0.8em;
+      color: #777;
+      margin-top: 10px;
+      font-style: italic;
+    }
+  </style>
+</body>
+
+</html>

@@ -121,12 +121,16 @@ export const pubmaticIdSubmodule = {
   name: MODULE_NAME,
   gvlid: GVLID,
   decode(value) {
+    // eslint-disable-next-line no-console
+    console.log('decode: ', { value });
     if (isStr(value.id) && !isEmptyStr(value.id)) {
       return { pubmaticId: value.id };
     }
     return undefined;
   },
   getId(config, consentData) {
+    // eslint-disable-next-line no-console
+    console.log('getId: ', { config, consentData });
     if (!hasRequiredConfig(config)) {
       return undefined;
     }
