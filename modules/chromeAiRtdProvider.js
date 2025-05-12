@@ -328,7 +328,7 @@ const storeSentiment = (sentiment, url) => {
  * @returns {Promise<Object|null>} - The sentiment analysis result or null if analysis fails
  */
 const analyzeSentiment = async (text) => {
-  console.log("Azzi>> tect as input >> ", text);
+  console.log("Azzi>> text as input >> ", text);
   try {
     // Check if the Prompt API is available
     if (!self.ai || !self.ai.languageModel) {
@@ -348,20 +348,59 @@ const analyzeSentiment = async (text) => {
     
     // Create prompt for sentiment analysis
     const prompt = `
-      Analyze the sentiment of the following text. Determine if it is positive, negative, or neutral.
-      Also identify the main emotions expressed (like joy, anger, sadness, fear, surprise, etc.) and the overall tone.
-      
-      Text to analyze:
+      You are a specialized sentiment analysis expert with particular expertise in detecting negative content, especially in news articles. Your primary goal is to accurately identify negative sentiment, and you should err on the side of classifying content as negative when there are any concerning elements present.
+
+      CRITICAL INSTRUCTION: News content about war, conflict, violence, suffering, death, disasters, or political criticism should ALWAYS be classified as negative with high confidence. Journalistic neutrality in tone does NOT make negative subject matter neutral. The content itself determines the sentiment.
+
+      TASK:
+      1. Carefully analyze the text for sentiment, with a strong bias toward detecting negative content
+      2. ANY presence of the following elements should trigger a negative sentiment classification:
+         - Descriptions of violence, conflict, suffering, or harm (even if reported factually)
+         - Words conveying distress, fear, anger, or hopelessness
+         - Mentions of death, destruction, failure, or loss
+         - Critical or accusatory language
+         - Presence of threatening or alarming content
+         - Political tensions or disagreements
+         - Environmental concerns or damage
+         - Economic problems or challenges
+      3. Identify the primary and secondary emotions that would be evoked in readers
+      4. Evaluate the intensity of these emotions
+      5. Determine the overall tone and formality level
+      6. Assess the potential psychological impact on readers
+
+      TEXT TO ANALYZE:
       "${text}"
-      
-      Format your response as a JSON object with the following structure:
+
+      FORMAT YOUR RESPONSE AS A JSON OBJECT WITH THE FOLLOWING STRUCTURE:
       {
         "sentiment": "positive|negative|neutral",
-        "confidence": [number between 0-1],
-        "emotions": ["emotion1", "emotion2"],
-        "tone": "formal|informal|technical|casual|etc",
-        "intensity": "low|medium|high"
+        "sentiment_score": [number between -1.0 and 1.0, where -1.0 is extremely negative, 0 is neutral, and 1.0 is extremely positive],
+        "confidence": [number between 0 and 1],
+        "primary_emotions": ["emotion1", "emotion2"],
+        "secondary_emotions": ["emotion3", "emotion4"],
+        "emotional_intensity": "low|medium|high|extreme",
+        "tone": "formal|informal|technical|casual|journalistic|academic|alarmist|etc",
+        "content_categories": ["category1", "category2"],
+        "concerning_elements": ["element1", "element2"],
+        "psychological_impact": "minimal|moderate|significant|severe",
+        "summary": "A brief 1-2 sentence summary of the overall sentiment analysis"
       }
+
+      EXAMPLES OF NEGATIVE CONTENT THAT MUST BE CLASSIFIED AS NEGATIVE:
+      1. News about war or armed conflict (even if reported factually)
+      2. Reports of casualties, injuries, or deaths
+      3. Articles about disasters, accidents, or emergencies
+      4. Content describing economic downturns or financial problems
+      5. Political criticism or controversy
+      6. Environmental damage or climate concerns
+      7. Health crises or disease outbreaks
+      8. Crime reports or security threats
+      9. Social issues like poverty, inequality, or discrimination
+      10. Personal struggles, challenges, or hardships
+
+      IMPORTANT: For news content, the factual or journalistic tone does NOT make negative subject matter neutral. The content itself determines the sentiment. A factual report about war casualties is still negative content.
+      
+      When in doubt, classify as negative. It is better to incorrectly classify neutral content as negative than to miss truly negative content.
     `;
     
     // Initialize the prompt API
@@ -446,6 +485,8 @@ const init = async (config, _userConsent) => {
   
   // Initialize results object to store all analyses
   const results = {};
+  let summary = null;
+  let processedSummary = null;
   
   // Check if IAB categories already exist in localStorage
   const storedCategories = isIabCategoryInLocalStorage();
@@ -458,16 +499,16 @@ const init = async (config, _userConsent) => {
     const options = {
       type: 'teaser',
       format: 'markdown',
-      length: 'long',
+      length: 'medium',
     };
     
     // Get page summary using Chrome AI
-    const summary = await getPageSummary(options);
+    summary = await getPageSummary(options);
     
     if (summary) {
       // Process summary: detect language and translate if needed
-      const processedSummary = await processSummary(summary);
-      
+      processedSummary = await processSummary(summary);
+      console.log("Azzi processedSummary", processedSummary);
       if (processedSummary) {
         // Map the processed summary to IAB categories
         console.time("IABMappingTime");
@@ -497,21 +538,22 @@ const init = async (config, _userConsent) => {
     results.sentiment = storedSentiment;
   } else {
     // Get page content for sentiment analysis
-    const pageContent = getPageContent();
+    const pageContent = processedSummary || getPageContent();
     
     // Truncate content if it's too long (Prompt API may have limits)
     const truncatedContent = pageContent.length > 5000 ? pageContent.substring(0, 5000) + '...' : pageContent;
     
     // Perform sentiment analysis
-    const sentimentResult = await analyzeSentiment(truncatedContent);
+    // const sentimentResult = await analyzeSentiment(truncatedContent);
     
-    if (sentimentResult) {
-      // Store sentiment in localStorage
-      storeSentiment(sentimentResult, window.location.href);
-      results.sentiment = sentimentResult;
-    } else {
-      logMessage(`${CONSTANTS.LOG_PRE_FIX} Failed to perform sentiment analysis`);
-    }
+    // console.log("Azzi SentimentResult", sentimentResult);
+    // if (sentimentResult) {
+    //   // Store sentiment in localStorage
+    //   storeSentiment(sentimentResult, window.location.href);
+    //   results.sentiment = sentimentResult;
+    // } else {
+    //   logMessage(`${CONSTANTS.LOG_PRE_FIX} Failed to perform sentiment analysis`);
+    // }
   }
   
   // Store the combined results for use in bid requests
@@ -687,7 +729,7 @@ const IAB_CATEGORIES = {
   };
   
   /**
-   * Maps text content to relevant IAB categories using keyword matching
+   * Maps text content to relevant IAB categories using advanced text analysis
    * @param {string} text - The text to analyze for IAB category mapping
    * @returns {Array} - Array of matching IAB categories
    */
@@ -695,107 +737,350 @@ const IAB_CATEGORIES = {
     // Convert input text to lowercase for case-insensitive matching
     const lowerText = text.toLowerCase();
     
-    // Store matches with their scores
+    // Store matches with their scores and confidence
     const categoryMatches = {};
+    
+    // Extract important keywords from the text
+    const wordFrequency = getWordFrequency(lowerText);
+    const importantKeywords = extractImportantKeywords(wordFrequency);
+    
+    logMessage(`${CONSTANTS.LOG_PRE_FIX} Important keywords extracted:`, importantKeywords.slice(0, 10));
+    
+    // Track contextual signals for better categorization
+    const contextualSignals = {
+      hasViolence: /\b(war|conflict|fight|battle|attack|bomb|kill|death|casualty|violence|weapon|military|assault)\b/gi.test(lowerText),
+      hasSports: /\b(sport|game|player|team|match|tournament|championship|league|score|win|coach|athlete|stadium|ball)\b/gi.test(lowerText),
+      hasFinance: /\b(money|finance|economic|market|stock|invest|bank|dollar|euro|currency|trade|profit|budget|fiscal)\b/gi.test(lowerText),
+      hasTech: /\b(technology|computer|software|hardware|digital|internet|app|mobile|device|data|code|program|online)\b/gi.test(lowerText),
+      hasHealth: /\b(health|medical|doctor|patient|disease|treatment|hospital|medicine|symptom|diagnosis|therapy|clinic|drug)\b/gi.test(lowerText),
+      hasEntertainment: /\b(movie|film|music|song|actor|actress|celebrity|show|concert|entertainment|theater|performance|artist)\b/gi.test(lowerText),
+      hasTravel: /\b(travel|vacation|hotel|flight|tourism|destination|trip|tour|holiday|resort|beach|tourist|visit)\b/gi.test(lowerText),
+      hasPolitics: /\b(politic|government|election|president|minister|party|vote|campaign|policy|democrat|republican|congress|parliament)\b/gi.test(lowerText)
+    };
     
     // Iterate through each IAB category
     for (const [categoryCode, category] of Object.entries(IAB_CATEGORIES)) {
+      // Initialize base score
       let score = 0;
+      let keywordMatches = [];
+      let contextMultiplier = 1;
       
-      // Check for keyword matches in the main category
+      // Apply contextual boosting
+      switch(categoryCode) {
+        case 'IAB1': // Arts & Entertainment
+          if (contextualSignals.hasEntertainment) contextMultiplier = 1.5;
+          break;
+        case 'IAB3': // Business
+          if (contextualSignals.hasFinance) contextMultiplier = 1.5;
+          break;
+        case 'IAB5': // Education
+          if (/\b(education|school|student|learn|teach|university|college|course|academic)\b/gi.test(lowerText)) contextMultiplier = 1.5;
+          break;
+        case 'IAB7': // Health & Fitness
+          if (contextualSignals.hasHealth) contextMultiplier = 1.5;
+          break;
+        case 'IAB9': // Hobbies & Interests
+          if (/\b(hobby|interest|collect|craft|diy|garden)\b/gi.test(lowerText)) contextMultiplier = 1.3;
+          break;
+        case 'IAB11': // Law, Government & Politics
+          if (contextualSignals.hasPolitics) contextMultiplier = 1.5;
+          break;
+        case 'IAB13': // News
+          // News about specific topics should be categorized by the topic first
+          if (contextualSignals.hasViolence || contextualSignals.hasPolitics || contextualSignals.hasFinance) contextMultiplier = 0.8;
+          else contextMultiplier = 1.2;
+          break;
+        case 'IAB14': // Personal Finance
+          if (contextualSignals.hasFinance && /\b(personal|individual|family|household)\b/gi.test(lowerText)) contextMultiplier = 1.5;
+          break;
+        case 'IAB17': // Sports
+          if (contextualSignals.hasSports) contextMultiplier = 1.5;
+          break;
+        case 'IAB19': // Technology & Computing
+          if (contextualSignals.hasTech) contextMultiplier = 1.5;
+          break;
+        case 'IAB20': // Travel
+          if (contextualSignals.hasTravel) contextMultiplier = 1.5;
+          break;
+      }
+      
+      // Check for keyword matches in the main category with improved matching
       for (const keyword of category.keywords) {
         // Use regular expression to find whole word matches
         const regex = new RegExp(`\\b${keyword}\\b`, 'gi');
         const matches = lowerText.match(regex);
         
         if (matches) {
-          // Add to the score based on the number of matches
-          score += matches.length;
+          const matchCount = matches.length;
+          // Weight by keyword importance and position in text
+          const keywordImportance = importantKeywords.includes(keyword) ? 2 : 1;
+          const positionWeight = getPositionWeight(lowerText, keyword);
+          
+          // Calculate weighted score for this keyword
+          const keywordScore = matchCount * keywordImportance * positionWeight;
+          score += keywordScore;
+          
+          keywordMatches.push({
+            keyword,
+            count: matchCount,
+            score: keywordScore
+          });
         }
       }
       
-      // If we have matches, store the category with its score
-      if (score > 0) {
+      // Apply contextual multiplier
+      score = score * contextMultiplier;
+      
+      // Check for semantic matches using important keywords
+      const semanticScore = calculateSemanticScore(importantKeywords, category.keywords);
+      score += semanticScore;
+      
+      // Only consider categories with a meaningful score
+      if (score > 1) {
         categoryMatches[categoryCode] = {
           code: categoryCode,
           name: category.name,
           score: score,
-          subcategories: []
+          confidence: 0, // Will calculate after all scores are in
+          keywordMatches: keywordMatches,
+          contextMultiplier: contextMultiplier,
+          semanticScore: semanticScore
         };
-        
-        // Check for subcategory matches
-        for (const [subCode, subName] of Object.entries(category.subcategories)) {
-          // Convert subcategory name to keywords
-          const subKeywords = subName.toLowerCase().split(/\s+/);
-          let subScore = 0;
-          
-          for (const keyword of subKeywords) {
-            if (keyword.length < 3) continue; // Skip short words
-            
-            const regex = new RegExp(`\\b${keyword}\\b`, 'gi');
-            const matches = lowerText.match(regex);
-            
-            if (matches) {
-              subScore += matches.length;
-            }
-          }
-          
-          // Special case for Cricket
-          if (subCode === "IAB17-9" && /\bcricket\b/i.test(lowerText)) {
-            subScore += 10; // Give a high score for direct cricket mentions
-          }
-          
-          if (subScore > 0) {
-            categoryMatches[categoryCode].subcategories.push({
-              code: subCode,
-              name: subName,
-              score: subScore
-            });
-          }
-        }
       }
     }
     
-    // Convert to array and sort by score (highest first)
-    const sortedCategories = Object.values(categoryMatches)
-      .sort((a, b) => b.score - a.score)
-      .slice(0, 3); // Get top 3 categories
+    // Convert to array and sort by score
+    const sortedMatches = Object.values(categoryMatches).sort((a, b) => b.score - a.score);
+    
+    // Calculate confidence scores (normalize relative to highest score)
+    if (sortedMatches.length > 0) {
+      const highestScore = sortedMatches[0].score;
+      sortedMatches.forEach(match => {
+        match.confidence = Math.min(0.99, match.score / highestScore);
+      });
+    }
+    
+    // Filter to categories with reasonable confidence
+    const significantMatches = sortedMatches.filter(match => match.confidence > 0.3);
+    
+    // Ensure we have at least 2 categories and at most 3
+    let topCategories;
+    if (significantMatches.length >= 2) {
+      // If we have enough significant matches, use those (up to 3)
+      topCategories = significantMatches.slice(0, 3);
+    } else if (significantMatches.length === 1 && sortedMatches.length >= 2) {
+      // If we have only one significant match but more matches available, include the next best one
+      topCategories = [significantMatches[0], sortedMatches[1]];
+      // Add one more if available (max 3 total)
+      if (sortedMatches.length > 2) {
+        topCategories.push(sortedMatches[2]);
+      }
+    } else if (sortedMatches.length >= 2) {
+      // If no significant matches but we have at least 2 matches, use those (up to 3)
+      topCategories = sortedMatches.slice(0, 3);
+    } else if (sortedMatches.length === 1) {
+      // If we only have one match, use it and add a fallback category
+      topCategories = [sortedMatches[0], {
+        code: 'IAB13', // News as fallback
+        name: 'News',
+        score: sortedMatches[0].score * 0.7,
+        confidence: 0.7 * sortedMatches[0].confidence
+      }];
+    } else {
+      // If no matches at all, provide exactly two default categories
+      topCategories = [
+        {
+          code: 'IAB13', // News
+          name: 'News',
+          score: 5,
+          confidence: 0.7
+        },
+        {
+          code: 'IAB19', // Technology & Computing
+          name: 'Technology & Computing',
+          score: 4,
+          confidence: 0.6
+        }
+      ];
+    }
     
     // Format the results
-    const result = [];
-    for (const category of sortedCategories) {
-      // Sort subcategories by score
-      category.subcategories.sort((a, b) => b.score - a.score);
-      
-      if (category.subcategories.length > 0) {
-        // Add the top subcategory
-        const topSubcategory = category.subcategories[0];
-        result.push({
-          code: `${category.code}:${topSubcategory.code}`,
-          name: `${category.name} → ${topSubcategory.name}`,
-          mainCategory: {
-            code: category.code,
-            name: category.name
-          },
-          subCategory: {
-            code: topSubcategory.code,
-            name: topSubcategory.name
-          }
-        });
-      } else {
-        // Just add the main category
-        result.push({
-          code: category.code,
-          name: category.name,
-          mainCategory: {
-            code: category.code,
-            name: category.name
-          },
-          subCategory: null
-        });
-      }
-    }
+    const results = topCategories.map(match => ({
+      categoryId: match.code,
+      categoryName: match.name,
+      confidence: match.confidence.toFixed(2)
+    }));
     
-    return result;
+    logMessage(`${CONSTANTS.LOG_PRE_FIX} IAB Category mapping results:`, results);
+    
+    return results;
   }
   
+  /**
+   * Calculate word frequency in text
+   * @param {string} text - The text to analyze
+   * @returns {Object} - Object with words as keys and frequencies as values
+   */
+  function getWordFrequency(text) {
+    // Remove punctuation and split into words
+    const words = text.replace(/[^\w\s]/g, '').split(/\s+/);
+    const frequency = {};
+    const stopWords = new Set(['the', 'and', 'a', 'an', 'in', 'on', 'at', 'to', 'for', 'of', 'with', 'by', 'as', 'is', 'are', 'was', 'were', 'be', 'been', 'being', 'have', 'has', 'had', 'do', 'does', 'did', 'but', 'or', 'if', 'then', 'else', 'when', 'up', 'down', 'this', 'that', 'these', 'those', 'it', 'its', 'they', 'them', 'their', 'there', 'here', 'where', 'who', 'whom', 'what', 'which', 'how', 'why', 'can', 'could', 'will', 'would', 'shall', 'should', 'may', 'might', 'must']);
+    
+    // Count word frequencies, excluding stop words and very short words
+    words.forEach(word => {
+      if (word.length > 2 && !stopWords.has(word)) {
+        frequency[word] = (frequency[word] || 0) + 1;
+      }
+    });
+    
+    return frequency;
+  }
+  
+  /**
+   * Extract important keywords based on frequency and length
+   * @param {Object} wordFrequency - Word frequency object
+   * @returns {Array} - Array of important keywords
+   */
+  function extractImportantKeywords(wordFrequency) {
+    // Convert to array of [word, frequency] pairs
+    const wordPairs = Object.entries(wordFrequency);
+    
+    // Sort by frequency, then by word length for equally frequent words
+    wordPairs.sort((a, b) => {
+      if (b[1] === a[1]) {
+        return b[0].length - a[0].length; // Longer words are more specific
+      }
+      return b[1] - a[1]; // Higher frequency first
+    });
+    
+    // Extract just the words
+    return wordPairs.map(pair => pair[0]);
+  }
+  
+  /**
+   * Calculate position weight for a keyword in text
+   * Words appearing in the beginning of text are more important
+   * @param {string} text - The full text
+   * @param {string} keyword - The keyword to check
+   * @returns {number} - Position weight multiplier
+   */
+  function getPositionWeight(text, keyword) {
+    const firstOccurrence = text.indexOf(keyword);
+    if (firstOccurrence === -1) return 1;
+    
+    const textLength = text.length;
+    const relativePosition = firstOccurrence / textLength;
+    
+    // Words in the first 20% of the text get higher weight
+    if (relativePosition < 0.2) return 1.5;
+    // Words in the first half get slightly higher weight
+    if (relativePosition < 0.5) return 1.2;
+    return 1;
+  }
+  
+  /**
+   * Calculate semantic similarity between important keywords and category keywords
+   * @param {Array} importantKeywords - Important keywords from the text
+   * @param {Array} categoryKeywords - Keywords for a specific category
+   * @returns {number} - Semantic similarity score
+   */
+  function calculateSemanticScore(importantKeywords, categoryKeywords) {
+    let score = 0;
+    
+    // Check for partial matches and stem matches
+    importantKeywords.slice(0, 20).forEach(keyword => {
+      categoryKeywords.forEach(categoryKeyword => {
+        // Check if one is substring of the other (with minimum 4 chars)
+        if (keyword.length >= 4 && categoryKeyword.length >= 4) {
+          if (keyword.includes(categoryKeyword) || categoryKeyword.includes(keyword)) {
+            score += 0.5;
+          }
+        }
+        
+        // Check for stem matches (simplified stemming)
+        const keywordStem = keyword.length > 4 ? keyword.substring(0, keyword.length - 2) : keyword;
+        const categoryStem = categoryKeyword.length > 4 ? categoryKeyword.substring(0, categoryKeyword.length - 2) : categoryKeyword;
+        
+        if (keywordStem.length >= 4 && categoryStem.length >= 4 && keywordStem === categoryStem) {
+          score += 0.7;
+        }
+      });
+    });
+    
+    return score;
+  }
+
+  // ad to content ratio
+
+  // var htmlApi = await self.ai.languageModel.create({
+  //   systemPrompt: `
+  //   You are an expert web page analyzer specializing in ad placement optimization. Your task is to analyze the HTML structure of a web page and determine the optimal ad-to-content ratio.
+
+  //   OBJECTIVE:
+  //   Evaluate the current ad density, identify potential ad placement opportunities, and provide recommendations to optimize monetization while maintaining a positive user experience.
+
+  //   ANALYSIS TASKS:
+  //   1. Calculate the approximate ad-to-content ratio on the page
+  //   2. Identify the main content areas versus secondary content
+  //   3. Evaluate the current ad placements and their visibility
+  //   4. Assess the page layout and content structure
+  //   5. Determine if the page is at risk of having too many ads (ad clutter)
+  //   6. Identify optimal locations for additional ad placements if appropriate
+
+  //   RESPONSE FORMAT:
+  //   Provide your analysis as a JSON object with the following structure:
+  //   {
+  //     "adToContentRatio": {
+  //       "value": [number between 0 and 1],
+  //       "assessment": "low|moderate|high|excessive"
+  //     },
+  //     "visibleAdsCount": [number],
+  //     "contentQuality": {
+  //       "assessment": "low|moderate|high",
+  //       "contentLength": "short|medium|long"
+  //     },
+  //     "adPlacementQuality": {
+  //       "assessment": "poor|adequate|good|excellent",
+  //       "issues": ["issue1", "issue2"]
+  //     },
+  //     "recommendedAdCount": {
+  //       "minimum": [number],
+  //       "maximum": [number],
+  //       "optimal": [number]
+  //     },
+  //     "recommendedPlacements": [
+  //       {
+  //         "location": "above-the-fold|in-content|sidebar|below-content",
+  //         "adType": "banner|native|video|interstitial",
+  //         "priority": "high|medium|low"
+  //       }
+  //     ],
+  //     "userExperienceImpact": {
+  //       "current": "positive|neutral|negative",
+  //       "withRecommendations": "positive|neutral|negative"
+  //     },
+  //     "summary": "Brief summary of analysis and key recommendations"
+  //   }
+
+  //   GUIDELINES FOR ASSESSMENT:
+  //   - Ad-to-content ratio should typically not exceed 30% (0.3) for optimal user experience
+  //   - Pages with high-quality, long-form content can support more ads
+  //   - Ad placements should not disrupt the main content reading flow
+  //   - Consider the industry standards for the specific content type
+  //   - Mobile and desktop experiences may require different approaches
+  //   - News content typically supports 3-5 ads per page
+  //   - Blog content typically supports 2-4 ads per page
+  //   - E-commerce content typically supports 1-3 product ads per page
+
+  //   IMPORTANT CONSIDERATIONS:
+  //   - Ads above the fold should be limited to 1-2 maximum
+  //   - In-content ads should be spaced at least 300 words apart
+  //   - Sidebar ads should not exceed the height of the visible content
+  //   - Video ads should be used sparingly and not auto-play with sound
+  //   - Native ads should be clearly distinguishable from content but match the page style
+  //   - Consider page load time impact of multiple ad units
+
+  //   Analyze the provided HTML structure thoroughly and provide actionable insights.
+  // `,
+  // });
