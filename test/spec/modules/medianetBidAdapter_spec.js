@@ -1,8 +1,10 @@
 import {expect, assert} from 'chai';
-import {spec, EVENT_PIXEL_URL, EVENTS} from 'modules/medianetBidAdapter.js';
+import {spec, EVENTS} from '../../../modules/medianetBidAdapter.js';
+import {POST_ENDPOINT} from '../../../libraries/medianetUtils/constants.js';
 import { makeSlot } from '../integration/faker/googletag.js';
-import { config } from 'src/config.js';
+import { config } from '../../../src/config.js';
 import {server} from '../../mocks/xhr.js';
+import {resetWinDimensions} from '../../../src/utils.js';
 
 $$PREBID_GLOBAL$$.version = $$PREBID_GLOBAL$$.version || 'version';
 let VALID_BID_REQUEST = [{
@@ -30,7 +32,7 @@ let VALID_BID_REQUEST = [{
     'bidId': '28f8f8130a583e',
     'bidderRequestId': '1e9b1f07797c1c',
     'auctionId': 'aafabfd0-28c0-4ac0-aa09-99689e88b81d',
-    'bidRequestsCount': 1
+    'auctionsCount': 1,
   }, {
     'bidder': 'medianet',
     'params': {
@@ -57,7 +59,7 @@ let VALID_BID_REQUEST = [{
     'bidId': '3f97ca71b1e5c2',
     'bidderRequestId': '1e9b1f07797c1c',
     'auctionId': 'aafabfd0-28c0-4ac0-aa09-99689e88b81d',
-    'bidRequestsCount': 1
+    'auctionsCount': 1
   }],
 
   VALID_BID_REQUEST_WITH_CRID = [{
@@ -87,7 +89,7 @@ let VALID_BID_REQUEST = [{
     'bidId': '28f8f8130a583e',
     'bidderRequestId': '1e9b1f07797c1c',
     'auctionId': 'aafabfd0-28c0-4ac0-aa09-99689e88b81d',
-    'bidRequestsCount': 1
+    'auctionsCount': 1
   }, {
     'bidder': 'medianet',
     'params': {
@@ -115,7 +117,7 @@ let VALID_BID_REQUEST = [{
     'bidId': '3f97ca71b1e5c2',
     'bidderRequestId': '1e9b1f07797c1c',
     'auctionId': 'aafabfd0-28c0-4ac0-aa09-99689e88b81d',
-    'bidRequestsCount': 1
+    'auctionsCount': 1
   }],
   VALID_BID_REQUEST_WITH_ORTB2 = [{
     'bidder': 'medianet',
@@ -144,7 +146,7 @@ let VALID_BID_REQUEST = [{
         'data': {'pbadslot': '/12345/my-gpt-tag-0'}
       }
     },
-    'bidRequestsCount': 1
+    'auctionsCount': 1
   }, {
     'bidder': 'medianet',
     'params': {
@@ -173,7 +175,7 @@ let VALID_BID_REQUEST = [{
         'data': {'pbadslot': '/12345/my-gpt-tag-0'}
       }
     },
-    'bidRequestsCount': 1
+    'auctionsCount': 1
   }],
   // Protected Audience API Request
   VALID_BID_REQUEST_WITH_AE_IN_ORTB2IMP = [{
@@ -203,7 +205,7 @@ let VALID_BID_REQUEST = [{
         'ae': 1
       }
     },
-    'bidRequestsCount': 1
+    'auctionsCount': 1
   }],
 
   VALID_BID_REQUEST_WITH_USERID = [{
@@ -235,7 +237,7 @@ let VALID_BID_REQUEST = [{
     'bidId': '28f8f8130a583e',
     'bidderRequestId': '1e9b1f07797c1c',
     'auctionId': 'aafabfd0-28c0-4ac0-aa09-99689e88b81d',
-    'bidRequestsCount': 1
+    'auctionsCount': 1
   }, {
     'bidder': 'medianet',
     'params': {
@@ -263,7 +265,7 @@ let VALID_BID_REQUEST = [{
     'bidId': '3f97ca71b1e5c2',
     'bidderRequestId': '1e9b1f07797c1c',
     'auctionId': 'aafabfd0-28c0-4ac0-aa09-99689e88b81d',
-    'bidRequestsCount': 1
+    'auctionsCount': 1
   }],
   VALID_BID_REQUEST_WITH_USERIDASEIDS = [{
     'bidder': 'medianet',
@@ -301,7 +303,7 @@ let VALID_BID_REQUEST = [{
     'bidId': '28f8f8130a583e',
     'bidderRequestId': '1e9b1f07797c1c',
     'auctionId': 'aafabfd0-28c0-4ac0-aa09-99689e88b81d',
-    'bidRequestsCount': 1
+    'auctionsCount': 1
   }, {
     'bidder': 'medianet',
     'params': {
@@ -329,7 +331,7 @@ let VALID_BID_REQUEST = [{
     'bidId': '3f97ca71b1e5c2',
     'bidderRequestId': '1e9b1f07797c1c',
     'auctionId': 'aafabfd0-28c0-4ac0-aa09-99689e88b81d',
-    'bidRequestsCount': 1
+    'auctionsCount': 1
   }],
 
   VALID_BID_REQUEST_INVALID_BIDFLOOR = [{
@@ -359,7 +361,7 @@ let VALID_BID_REQUEST = [{
     'bidId': '28f8f8130a583e',
     'bidderRequestId': '1e9b1f07797c1c',
     'auctionId': 'aafabfd0-28c0-4ac0-aa09-99689e88b81d',
-    'bidRequestsCount': 1
+    'auctionsCount': 1
   }, {
     'bidder': 'medianet',
     'params': {
@@ -386,7 +388,7 @@ let VALID_BID_REQUEST = [{
     'bidId': '3f97ca71b1e5c2',
     'bidderRequestId': '1e9b1f07797c1c',
     'auctionId': 'aafabfd0-28c0-4ac0-aa09-99689e88b81d',
-    'bidRequestsCount': 1
+    'auctionsCount': 1
   }],
   VALID_NATIVE_BID_REQUEST = [{
     'bidder': 'medianet',
@@ -414,7 +416,7 @@ let VALID_BID_REQUEST = [{
     'bidId': '28f8f8130a583e',
     'bidderRequestId': '1e9b1f07797c1c',
     'auctionId': 'aafabfd0-28c0-4ac0-aa09-99689e88b81d',
-    'bidRequestsCount': 1,
+    'auctionsCount': 1,
     'nativeParams': {
       'image': {
         'required': true,
@@ -471,7 +473,7 @@ let VALID_BID_REQUEST = [{
     'bidId': '3f97ca71b1e5c2',
     'bidderRequestId': '1e9b1f07797c1c',
     'auctionId': 'aafabfd0-28c0-4ac0-aa09-99689e88b81d',
-    'bidRequestsCount': 1,
+    'auctionsCount': 1,
     'nativeParams': {
       'image': {
         'required': true,
@@ -1244,7 +1246,7 @@ let VALID_BID_REQUEST = [{
     'bidId': '28f8f8130a583e',
     'bidderRequestId': '1e9b1f07797c1c',
     'auctionId': 'aafabfd0-28c0-4ac0-aa09-99689e88b81d',
-    'bidRequestsCount': 1
+    'auctionsCount': 1
   }],
 
   VALID_PAYLOAD_PAGE_META = (() => {
@@ -1254,8 +1256,6 @@ let VALID_BID_REQUEST = [{
     } catch (e) {}
     PAGE_META.site = Object.assign(PAGE_META.site, {
       'canonical_url': 'http://localhost:9999/canonical-test',
-      'twitter_url': 'http://localhost:9999/twitter-test',
-      'og_url': 'http://localhost:9999/fb-test'
     });
     return PAGE_META;
   })(),
@@ -1646,7 +1646,7 @@ let VALID_BID_REQUEST = [{
     'bidId': '28f8f8130a583e',
     'bidderRequestId': '1e9b1f07797c1c',
     'auctionId': 'aafabfd0-28c0-4ac0-aa09-99689e88b81d',
-    'bidRequestsCount': 1
+    'auctionsCount': 1
   }, {
     'bidder': 'medianet',
     'params': {
@@ -1673,7 +1673,7 @@ let VALID_BID_REQUEST = [{
     'bidId': '3f97ca71b1e5c2',
     'bidderRequestId': '1e9b1f07797c1c',
     'auctionId': 'aafabfd0-28c0-4ac0-aa09-99689e88b81d',
-    'bidRequestsCount': 1
+    'auctionsCount': 1
   }],
   VALID_BIDDER_REQUEST_WITH_GDPR = {
     'gdprConsent': {
@@ -1926,6 +1926,7 @@ describe('Media.net bid adapter', function () {
   });
 
   afterEach(function () {
+    resetWinDimensions();
     sandbox.restore();
   });
 
@@ -2280,7 +2281,7 @@ describe('Media.net bid adapter', function () {
       const reqBody = new URLSearchParams(server.requests[0].requestBody);
 
       assert.equal(server.requests[0].method, 'POST');
-      assert.equal(server.requests[0].url, EVENT_PIXEL_URL);
+      assert.equal(server.requests[0].url, POST_ENDPOINT);
       assert.equal(reqBody.get('event'), EVENTS.TIMEOUT_EVENT_NAME);
       assert.equal(reqBody.get('rd'), timeoutData[0].timeout.toString());
       assert.equal(reqBody.get('acid[]'), timeoutData[0].auctionId);
@@ -2306,7 +2307,7 @@ describe('Media.net bid adapter', function () {
       const reqBody = new URLSearchParams(server.requests[0].requestBody);
 
       assert.equal(server.requests[0].method, 'POST');
-      assert.equal(server.requests[0].url, EVENT_PIXEL_URL);
+      assert.equal(server.requests[0].url, POST_ENDPOINT);
       assert.equal(reqBody.get('event'), EVENTS.BID_WON_EVENT_NAME);
       assert.equal(reqBody.get('value'), bid.cpm.toString());
       assert.equal(reqBody.get('acid[]'), bid.auctionId);
@@ -2333,7 +2334,7 @@ describe('Media.net bid adapter', function () {
       const reqBody = new URLSearchParams(server.requests[0].requestBody);
 
       assert.equal(server.requests[0].method, 'POST');
-      assert.equal(server.requests[0].url, EVENT_PIXEL_URL);
+      assert.equal(server.requests[0].url, POST_ENDPOINT);
       assert.equal(reqBody.get('event'), EVENTS.SET_TARGETING);
       assert.equal(reqBody.get('value'), bid.cpm.toString());
       assert.equal(reqBody.get('acid[]'), bid.auctionId);
@@ -2364,7 +2365,7 @@ describe('Media.net bid adapter', function () {
       const reqBody = new URLSearchParams(server.requests[0].requestBody);
 
       assert.equal(server.requests[0].method, 'POST');
-      assert.equal(server.requests[0].url, EVENT_PIXEL_URL);
+      assert.equal(server.requests[0].url, POST_ENDPOINT);
       assert.equal(reqBody.get('event'), EVENTS.BIDDER_ERROR);
       assert.equal(reqBody.get('rd'), `timedOut:${error.timedOut}|status:${error.status}|message:${error.reason.message}`);
       assert.equal(reqBody.get('acid[]'), bids[0].auctionId);

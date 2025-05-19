@@ -1,5 +1,5 @@
 import {expect} from 'chai';
-import {spec} from 'modules/koblerBidAdapter.js';
+import {pageViewId, spec} from 'modules/koblerBidAdapter.js';
 import {newBidder} from 'src/adapters/bidderFactory.js';
 import {config} from 'src/config.js';
 import * as utils from 'src/utils.js';
@@ -245,6 +245,21 @@ describe('KoblerAdapter', function () {
       expect(openRtbRequest.tmax).to.be.equal(timeout);
       expect(openRtbRequest.id).to.exist;
       expect(openRtbRequest.site.page).to.be.equal(testUrl);
+    });
+
+    it('should reuse the same page view ID on subsequent calls', function () {
+      const testUrl = 'kobler.no';
+      const auctionId1 = '8319af54-9795-4642-ba3a-6f57d6ff9100';
+      const auctionId2 = 'e19f2d0c-602d-4969-96a1-69a22d483f47';
+      const timeout = 5000;
+      const validBidRequests = [createValidBidRequest()];
+      const bidderRequest1 = createBidderRequest(auctionId1, timeout, testUrl);
+      const bidderRequest2 = createBidderRequest(auctionId2, timeout, testUrl);
+
+      const openRtbRequest1 = JSON.parse(spec.buildRequests(validBidRequests, bidderRequest1).data);
+      expect(openRtbRequest1.ext.kobler.page_view_id).to.be.equal(pageViewId);
+      const openRtbRequest2 = JSON.parse(spec.buildRequests(validBidRequests, bidderRequest2).data);
+      expect(openRtbRequest2.ext.kobler.page_view_id).to.be.equal(pageViewId);
     });
 
     it('should read data from valid bid requests', function () {
@@ -529,7 +544,8 @@ describe('KoblerAdapter', function () {
           }
         ],
         device: {
-          devicetype: 2
+          devicetype: 2,
+          ua: navigator.userAgent
         },
         site: {
           page: 'bid.kobler.no'
@@ -538,7 +554,8 @@ describe('KoblerAdapter', function () {
         ext: {
           kobler: {
             tcf_purpose_2_given: true,
-            tcf_purpose_3_given: false
+            tcf_purpose_3_given: false,
+            page_view_id: pageViewId
           }
         }
       };
@@ -573,6 +590,7 @@ describe('KoblerAdapter', function () {
                   price: 7.981,
                   nurl: 'https://atag.essrtb.com/serve/prebid_win_notification?payload=sdhfusdaobfadslf234324&sp=${AUCTION_PRICE}&sp_cur=${AUCTION_PRICE_CURRENCY}&asp=${AD_SERVER_PRICE}&asp_cur=${AD_SERVER_PRICE_CURRENCY}',
                   crid: 'edea9b03-3a57-41aa-9c00-abd673e22006',
+                  cid: '572',
                   dealid: '',
                   w: 320,
                   h: 250,
@@ -587,6 +605,7 @@ describe('KoblerAdapter', function () {
                   nurl: 'https://atag.essrtb.com/serve/prebid_win_notification?payload=nbashgufvishdafjk23432&sp=${AUCTION_PRICE}&sp_cur=${AUCTION_PRICE_CURRENCY}&asp=${AD_SERVER_PRICE}&asp_cur=${AD_SERVER_PRICE_CURRENCY}',
                   crid: 'fa2d5af7-2678-4204-9023-44c526160742',
                   dealid: '2783483223432342',
+                  cid: '800',
                   w: 580,
                   h: 400,
                   adm: '<script src="https://atag.essrtb.com/serve/prebid_ad_tag?payload=nbashgufvishdafjk23432"></script>',
@@ -615,6 +634,7 @@ describe('KoblerAdapter', function () {
           ttl: 600,
           ad: '<script src="https://atag.essrtb.com/serve/prebid_ad_tag?payload=sdhfusdaobfadslf234324"></script>',
           nurl: 'https://atag.essrtb.com/serve/prebid_win_notification?payload=sdhfusdaobfadslf234324&sp=${AUCTION_PRICE}&sp_cur=${AUCTION_PRICE_CURRENCY}&asp=${AD_SERVER_PRICE}&asp_cur=${AD_SERVER_PRICE_CURRENCY}',
+          cid: '572',
           meta: {
             advertiserDomains: [
               'https://kobler.no'
@@ -633,6 +653,7 @@ describe('KoblerAdapter', function () {
           ttl: 600,
           ad: '<script src="https://atag.essrtb.com/serve/prebid_ad_tag?payload=nbashgufvishdafjk23432"></script>',
           nurl: 'https://atag.essrtb.com/serve/prebid_win_notification?payload=nbashgufvishdafjk23432&sp=${AUCTION_PRICE}&sp_cur=${AUCTION_PRICE_CURRENCY}&asp=${AD_SERVER_PRICE}&asp_cur=${AD_SERVER_PRICE_CURRENCY}',
+          cid: '800',
           meta: {
             advertiserDomains: [
               'https://bid.kobler.no'

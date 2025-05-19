@@ -4,6 +4,7 @@ import {
   deepSetValue,
   getBidIdParameter,
   getDefinedParams,
+  getWinDimensions,
   getWindowTop,
   isArray,
   isStr,
@@ -20,8 +21,9 @@ import {config} from '../src/config.js';
 
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {getRefererInfo} from '../src/refererDetection.js';
+import { getViewportSize } from '../libraries/viewport/viewport.js';
 
-const NM_VERSION = '4.2.1';
+const NM_VERSION = '4.3.0';
 const PBJS_VERSION = 'v$prebid.version$';
 const GVLID = 1060;
 const BIDDER_CODE = 'nextMillennium';
@@ -271,7 +273,7 @@ function getExtNextMilImp(bid) {
       nm_version: NM_VERSION,
       pbjs_version: PBJS_VERSION,
       refresh_count: window?.nmmRefreshCounts[bid.adUnitCode] || 0,
-      scrollTop: window.pageYOffset || document.documentElement.scrollTop,
+      scrollTop: window.pageYOffset || getWinDimensions().document.documentElement.scrollTop,
     },
   };
 
@@ -291,6 +293,11 @@ export function getImp(bid, id, mediaTypes) {
     },
   };
 
+  const gpid = bid?.ortb2Imp?.ext?.gpid;
+  const pbadslot = bid?.ortb2Imp?.ext?.data?.pbadslot;
+  if (gpid) imp.ext.gpid = gpid;
+  if (pbadslot) imp.ext.data = { pbadslot };
+
   getImpBanner(imp, banner);
   getImpVideo(imp, video);
 
@@ -303,13 +310,15 @@ export function getImpBanner(imp, banner) {
   if (banner.bidfloorcur) imp.bidfloorcur = banner.bidfloorcur;
   if (banner.bidfloor) imp.bidfloor = banner.bidfloor;
 
-  const format = (banner.data?.sizes || []).map(s => { return {w: s[0], h: s[1]} })
+  const format = (banner.data?.sizes || []).map(s => { return {w: s[0], h: s[1]} });
   const {w, h} = (format[0] || {})
   imp.banner = {
     w,
     h,
     format,
   };
+
+  setImpPos(imp.banner, banner?.pos);
 };
 
 export function getImpVideo(imp, video) {
@@ -331,6 +340,12 @@ export function getImpVideo(imp, video) {
     imp.video.w = video.data.w;
     imp.video.h = video.data.h;
   };
+
+  setImpPos(imp.video, video?.pos);
+};
+
+export function setImpPos(obj, pos) {
+  if (typeof pos === 'number' && pos >= 0 && pos <= 7) obj.pos = pos;
 };
 
 export function setConsentStrings(postBody = {}, bidderRequest) {
@@ -485,9 +500,10 @@ function getSiteObj() {
 }
 
 function getDeviceObj() {
+  const { width, height } = getViewportSize();
   return {
-    w: window.innerWidth || window.document.documentElement.clientWidth || window.document.body.clientWidth || 0,
-    h: window.innerHeight || window.document.documentElement.clientHeight || window.document.body.clientHeight || 0,
+    w: width,
+    h: height,
     ua: window.navigator.userAgent || undefined,
     sua: getSua(),
   };

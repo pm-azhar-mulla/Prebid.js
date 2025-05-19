@@ -1,5 +1,6 @@
 import {
   deepAccess,
+  generateUUID,
   getWindowSelf,
   isArray,
   isStr,
@@ -13,6 +14,8 @@ import {getRefererInfo} from '../src/refererDetection.js';
 import { getCurrencyFromBidderRequest } from '../libraries/ortb2Utils/currency.js';
 
 const additionalData = new WeakMap();
+
+export const pageViewId = generateUUID();
 
 export function setAdditionalData(obj, key, value) {
   const prevValue = additionalData.get(obj) || {};
@@ -71,6 +74,7 @@ export const interpretResponse = function (serverResponse, request) {
           ttl: TIME_TO_LIVE_IN_SECONDS,
           ad: b.adm,
           nurl: b.nurl,
+          cid: b.cid,
           meta: {
             advertiserDomains: b.adomain
           }
@@ -160,7 +164,9 @@ function buildOpenRtbBidRequestPayload(validBidRequests, bidderRequest) {
     cur: [SUPPORTED_CURRENCY],
     imp: imps,
     device: {
-      devicetype: getDevice()
+      devicetype: getDevice(),
+      ua: navigator.userAgent,
+      sua: validBidRequests[0]?.ortb2?.device?.sua
     },
     site: {
       page: pageUrl,
@@ -169,7 +175,8 @@ function buildOpenRtbBidRequestPayload(validBidRequests, bidderRequest) {
     ext: {
       kobler: {
         tcf_purpose_2_given: purpose2Given,
-        tcf_purpose_3_given: purpose3Given
+        tcf_purpose_3_given: purpose3Given,
+        page_view_id: pageViewId
       }
     }
   };
