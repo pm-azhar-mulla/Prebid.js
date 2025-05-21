@@ -1,5 +1,8 @@
 import { getGlobal } from "../src/prebidGlobal";
-import { logWarn } from "../src/utils";
+import { logWarn, triggerPixel } from "../src/utils";
+import * as events from '../src/events.js';
+import { EVENTS } from '../src/constants.js';
+import { find } from '../src/polyfill.js';
 
 const LOG_WARN_PREFIX = 'OpenWrapConvert: ';
 window.PWT = window.PWT || {};
@@ -45,9 +48,43 @@ if (winningBid && winningBid.adId) {
         const iframeStyle = iframeDoc.createElement('style');
         iframeStyle.appendChild(iframeDoc.createTextNode(normalizeCss));
         iframeDoc.head.appendChild(iframeStyle);
+        
+        // Setup viewability tracking for this ad
+        window.PWT.setupViewabilityTracking(winningBid, iframe);
         }
     }
 }
+
+// Function to setup viewability tracking for rendered ads
+window.PWT.setupViewabilityTracking = function(bid, iframe) {
+    if (!bid || !iframe) return;
+    
+    // Create IntersectionObserver to detect when ad becomes viewable
+    if ('IntersectionObserver' in window) {
+        const viewabilityThreshold = 0.5; // 50% of ad must be visible (same as GAM default)
+        const viewabilityObserver = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                // If ad is at least 50% visible
+                if (entry.isIntersecting && entry.intersectionRatio >= viewabilityThreshold) {
+                    // Fire viewability pixel if it exists
+                    if (bid.owVurl) {
+                        triggerPixel(bid.owVurl);
+                    }
+                    
+                    // Emit the BID_VIEWABLE event with bid details
+                    events.emit(EVENTS.BID_VIEWABLE, bid);                    
+                    // Once fired, disconnect the observer
+                    viewabilityObserver.disconnect();
+                }
+            });
+        }, {
+            threshold: [viewabilityThreshold]
+        });
+        
+        // Start observing the iframe
+        viewabilityObserver.observe(iframe);
+    }
+};
 
 window.PWT.requestConvertServer = function(obj){
     var owNamespace = getGlobal();

@@ -118,7 +118,8 @@ const PBS_CONVERTER = ortbConverter({
         auctionId: context.bidderRequest.auctionId,
       }), bidResponse, {
         deferRendering: !!context.adUnit.deferBilling,
-        deferBilling: !!context.adUnit.deferBilling
+        deferBilling: !!context.adUnit.deferBilling,
+        owVurl: bid?.vurl
       }),
       adUnit: context.adUnit.code
     };
