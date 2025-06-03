@@ -148,7 +148,7 @@ export const spec = {
       if (schain) {
         placement.schain = schain;
       }
-      let gpid = deepAccess(bid, 'ortb2Imp.ext.gpid') || deepAccess(bid, 'ortb2Imp.ext.data.pbadslot');
+      let gpid = deepAccess(bid, 'ortb2Imp.ext.gpid');
       if (gpid) {
         placement.gpid = gpid;
       }

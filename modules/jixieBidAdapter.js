@@ -175,7 +175,7 @@ export const spec = {
   code: BIDDER_CODE,
   supportedMediaTypes: [BANNER, VIDEO],
   isBidRequestValid: function(bid) {
-    if (bid.bidder !== BIDDER_CODE || typeof bid.params === 'undefined') {
+    if (typeof bid.params === 'undefined') {
       return false;
     }
     if (typeof bid.params.unit === 'undefined') {
@@ -189,7 +189,7 @@ export const spec = {
 
     let bids = [];
     validBidRequests.forEach(function(one) {
-      let gpid = deepAccess(one, 'ortb2Imp.ext.gpid', deepAccess(one, 'ortb2Imp.ext.data.pbadslot', ''));
+      let gpid = deepAccess(one, 'ortb2Imp.ext.gpid', '');
       let tmp = {
         bidId: one.bidId,
         adUnitCode: one.adUnitCode,

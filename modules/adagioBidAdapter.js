@@ -637,7 +637,7 @@ export const spec = {
         _buildVideoBidRequest(bidRequest);
       }
 
-      const gpid = deepAccess(bidRequest, 'ortb2Imp.ext.gpid') || deepAccess(bidRequest, 'ortb2Imp.ext.data.pbadslot');
+      const gpid = deepAccess(bidRequest, 'ortb2Imp.ext.gpid');
       if (gpid) {
         bidRequest.gpid = gpid;
       }

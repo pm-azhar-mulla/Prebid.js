@@ -21,6 +21,7 @@ const DEFAULT_CUR = 'USD';
 const ALIASES = [
   { code: 'emx_digital', gvlid: 183 },
   { code: 'cadent', gvlid: 183 },
+  { code: 'emxdigital', gvlid: 183 },
 ];
 
 const EIDS_SUPPORTED = [
@@ -278,8 +279,7 @@ export const spec = {
       // adding gpid support
       let gpid =
         deepAccess(bid, 'ortb2Imp.ext.gpid') ||
-        deepAccess(bid, 'ortb2Imp.ext.data.adserver.adslot') ||
-        deepAccess(bid, 'ortb2Imp.ext.data.pbadslot');
+        deepAccess(bid, 'ortb2Imp.ext.data.adserver.adslot')
 
       if (gpid) {
         data.ext = { gpid: gpid.toString() };

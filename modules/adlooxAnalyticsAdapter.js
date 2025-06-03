@@ -64,8 +64,8 @@ MACRO['pageurl'] = function(b, c) {
   return (refererInfo.page || '').substr(0, 300).split(/[?#]/)[0];
 };
 MACRO['gpid'] = function(b, c) {
-  const adUnit = ((auctionManager.getAdUnits()) || []).find(a => b.adUnitCode === a.code);
-  return deepAccess(adUnit, 'ortb2Imp.ext.gpid') || deepAccess(adUnit, 'ortb2Imp.ext.data.pbadslot') || getGptSlotInfoForAdUnitCode(b.adUnitCode).gptSlot || b.adUnitCode;
+  const adUnit = find(auctionManager.getAdUnits(), a => b.adUnitCode === a.code);
+  return deepAccess(adUnit, 'ortb2Imp.ext.gpid') || getGptSlotInfoForAdUnitCode(b.adUnitCode).gptSlot || b.adUnitCode;
 };
 MACRO['pbAdSlot'] = MACRO['pbadslot'] = MACRO['gpid']; // legacy
 
