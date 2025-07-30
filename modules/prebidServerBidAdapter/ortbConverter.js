@@ -119,7 +119,7 @@ const PBS_CONVERTER = ortbConverter({
       }), bidResponse, {
         deferRendering: !!context.adUnit.deferBilling,
         deferBilling: !!context.adUnit.deferBilling,
-        owVurl: bid?.vurl
+        owVurl: bid?.vurl || bid?.ext?.vurl
       }),
       adUnit: context.adUnit.code
     };
