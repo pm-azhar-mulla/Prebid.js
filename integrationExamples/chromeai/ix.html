@@ -1,3 +1,5 @@
+
+
 <!--
   この広告スロット用の単一の入札者を呼び出すページです。
   Google Publisher Tagを使用したPrebidの「ハローワールド」の例と考えることができます。
@@ -86,27 +88,174 @@
            var FAILSAFE_TIMEOUT = 3300;
            var PREBID_TIMEOUT = 3000;
    
-           var adUnits = [{
-               code: 'div-gpt-ad-1460505748561-0',
-               mediaTypes: {
-                   banner: {
-                       sizes: [[728,90]],
-                   }
-               },            
-               // Replace this object to test a new Adapter!
-               bids: [{
-                       bidder: 'pubmatic',
-                       params: {
-                           publisherId: '103207222',
-                           adUnit: 'TestAdUnit'
-                       },
-                   },
-                   {bidder: "appnexus",
-                   params: {placementId: '8801672114'}
-                     }
-   
-               ]
-           }];
+           var adUnits = [
+    {
+        "code": "wordtips_vip_adhesion_mobile",
+        "sizes": [[300, 50], [320, 50], [300, 100], [320, 100]],
+        "mediaTypes": {
+            "banner": {
+                "sizes": [[320, 100], [300, 100], [320, 50], [300, 50]]
+            }
+        },
+        "bids": [
+            {
+                "bidder": "ix",
+                "params": {
+                    "siteId": "676941",
+                    "size": [300, 50]
+                },
+                "sizeConfig": [
+                    {
+                        "minViewPort": [0, 0],
+                        "relevantMediaTypes": ["banner", "native", "video"]
+                    }
+                ]
+            },
+            {
+                "bidder": "ix",
+                "params": {
+                    "siteId": "676941",
+                    "size": [320, 50]
+                },
+                "sizeConfig": [
+                    {
+                        "minViewPort": [0, 0],
+                        "relevantMediaTypes": ["banner", "native", "video"]
+                    }
+                ]
+            },
+            {
+                "bidder": "ix",
+                "params": {
+                    "siteId": "676941",
+                    "size": [300, 100]
+                },
+                "sizeConfig": [
+                    {
+                        "minViewPort": [0, 0],
+                        "relevantMediaTypes": ["banner", "native", "video"]
+                    }
+                ]
+            },
+            {
+                "bidder": "ix",
+                "params": {
+                    "siteId": "676941",
+                    "size": [320, 100]
+                },
+                "sizeConfig": [
+                    {
+                        "minViewPort": [0, 0],
+                        "relevantMediaTypes": ["banner", "native", "video"]
+                    }
+                ]
+            },
+            {
+                "bidder": "rubicon",
+                "params": {
+                    "accountId": "16924",
+                    "siteId": "500600",
+                    "zoneId": "2983354"
+                },
+                "sizeConfig": [
+                    {
+                        "minViewPort": [0, 0],
+                        "relevantMediaTypes": ["banner", "native", "video"]
+                    }
+                ]
+            },
+            {
+                "bidder": "openx",
+                "params": {
+                    "unit": "539181725",
+                    "delDomain": "freestar-d.openx.net"
+                },
+                "sizeConfig": [
+                    {
+                        "minViewPort": [0, 0],
+                        "relevantMediaTypes": ["banner", "native", "video"]
+                    }
+                ]
+            },
+            {
+                "bidder": "yieldmo",
+                "params": {
+                    "placementId": "2662464007037722661"
+                },
+                "sizeConfig": [
+                    {
+                        "minViewPort": [0, 0],
+                        "relevantMediaTypes": ["banner", "native", "video"]
+                    }
+                ]
+            },
+            {
+                "bidder": "yieldmo",
+                "params": {
+                    "placementId": "3656750945250779656"
+                },
+                "sizeConfig": [
+                    {
+                        "minViewPort": [0, 0],
+                        "relevantMediaTypes": ["banner", "native", "video"]
+                    }
+                ]
+            },
+            {
+                "bidder": "pubmatic",
+                "size": [[300, 100]],
+                "params": {
+                    "publisherId": "156696",
+                    "adSlot": "freestar_300x100@300x100"
+                },
+                "sizeConfig": [
+                    {
+                        "minViewPort": [0, 0],
+                        "relevantMediaTypes": ["banner", "native"]
+                    }
+                ]
+            },
+            {
+                "bidder": "pubmatic",
+                "size": [[320, 100]],
+                "params": {
+                    "publisherId": "156696",
+                    "adSlot": "freestar_320x100@320x100"
+                },
+                "sizeConfig": [
+                    {
+                        "minViewPort": [0, 0],
+                        "relevantMediaTypes": ["banner", "native", "video"]
+                    }
+                ]
+            },
+            {
+                "bidder": "pubmatic",
+                "size": [[320, 50]],
+                "params": {
+                    "publisherId": "156696",
+                    "adSlot": "freestar_320x50@320x50"
+                },
+                "sizeConfig": [
+                    {
+                        "minViewPort": [0, 0],
+                        "relevantMediaTypes": ["banner", "native", "video"]
+                    }
+                ]
+            }
+        ],
+        "ortb2Imp": {
+            "ext": {
+                "data": {
+                    "fs_ad_product": "stickyFooter",
+                    "fs_ad_optimization": null
+                }
+            },
+            "tagid": "wordtips_vip_adhesion_mobile",
+            "battr": [1, 3, 5, 8, 9, 10, 14]
+        }
+    }
+];
    
            var pbjs = pbjs || {};
            pbjs.que = pbjs.que || [];
@@ -123,25 +272,7 @@
            pbjs.que.push(function() {
    
                pbjs.setConfig({
-                   enableTIDs: true,
-                   realTimeData: {
-                       auctionDelay: 500,
-                       dataProviders: [
-                           {
-                               name: "chromeAi",
-                               waitForIt: true,
-                               params: {
-                                   languageDetector: {
-                                        enabled: true
-                                   },
-                                   summarizer:{
-                                    enabled: true,
-                                    length: 'medium',
-                                   }
-                               },
-                           },
-                       ],
-                   },
+                   enableTIDs: true
                });
                pbjs.addAdUnits(adUnits);
                pbjs.requestBids({

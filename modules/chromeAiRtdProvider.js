@@ -230,6 +230,11 @@ export const detectSummary = async (text, config) => {
         type: config.type,
         format: config.format,
         length: config.length,
+        monitor: function(m) {
+          m.addEventListener('downloadprogress', (e) => {
+            console.log(`Downloaded ${e.loaded * 100}%`);
+          });
+        }
       };
   const summarizer = await _createAiApiInstance(Summarizer, summaryOptions);
   if (!summarizer) {
