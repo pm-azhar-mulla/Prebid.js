@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ADAGIO Unminified Demo</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+      line-height: 1.6;
+      color: #333;
+      max-width: 1000px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+    
+    h1, h2, h3 {
+      color: #006D77; /* Teal primary color */
+    }
+    
+    .container {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 20px;
+    }
+    
+    .column {
+      flex: 1;
+      min-width: 300px;
+    }
+    
+    .ad-container {
+      border: 1px solid #83C5BE; /* Light Teal secondary color */
+      background-color: #EDF6F9; /* Light Blue tertiary color */
+      padding: 10px;
+      margin-bottom: 20px;
+      text-align: center;
+    }
+    
+    .ad-placeholder {
+      background-color: #FFDDD2; /* Coral accent color */
+      height: 250px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #006D77;
+      font-weight: bold;
+    }
+    
+    pre {
+      background-color: #f5f5f5;
+      padding: 10px;
+      border-radius: 5px;
+      overflow-x: auto;
+    }
+    
+    .button {
+      background-color: #006D77;
+      color: white;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 4px;
+      cursor: pointer;
+      margin-right: 10px;
+      margin-bottom: 10px;
+    }
+    
+    .button:hover {
+      background-color: #005a63;
+    }
+  </style>
+</head>
+<body>
+  <h1>ADAGIO Ad Measurement Library Demo</h1>
+  <p>This page demonstrates the unminified and refactored version of the ADAGIO library for ad viewability measurement.</p>
+  
+  <div class="container">
+    <div class="column">
+      <h2>Ad Units</h2>
+      <p>Below are sample ad units that will be measured by the ADAGIO library.</p>
+      
+      <div class="ad-container">
+        <h3>300x250 Ad</h3>
+        <div id="ad-unit-1" class="ad-placeholder">Ad Placement #1 (300x250)</div>
+      </div>
+      
+      <div class="ad-container">
+        <h3>728x90 Ad</h3>
+        <div id="ad-unit-2" class="ad-placeholder" style="height: 90px;">Ad Placement #2 (728x90)</div>
+      </div>
+      
+      <div class="ad-container">
+        <h3>160x600 Ad</h3>
+        <div id="ad-unit-3" class="ad-placeholder" style="height: 600px; width: 160px; margin: 0 auto;">Ad Placement #3 (160x600)</div>
+      </div>
+      
+      <h2>Debug Controls</h2>
+      <button id="enable-debug" class="button">Enable Debug Mode</button>
+      <button id="disable-debug" class="button">Disable Debug Mode</button>
+      <button id="show-logs" class="button">Show Console Logs</button>
+    </div>
+    
+    <div class="column">
+      <h2>Library Information</h2>
+      <ul>
+        <li><strong>Version:</strong> 2.1.11</li>
+        <li><strong>Modules:</strong> Core, Session, Features, Measurement</li>
+      </ul>
+      
+      <h3>Key Features:</h3>
+      <ul>
+        <li>Ad viewability measurement</li>
+        <li>Integration with multiple ad servers</li>
+        <li>Session tracking</li>
+        <li>Feature detection</li>
+        <li>Beacon sending</li>
+      </ul>
+      
+      <h3>Debug Output:</h3>
+      <pre id="debug-output">// Debug information will appear here when enabled</pre>
+    </div>
+  </div>
+  
+  <h2>Implementation</h2>
+  <p>The unminified library is split into multiple files:</p>
+  <pre>
+// Core utilities and global namespace - MUST BE LOADED FIRST
+&lt;script src="adagio_core.js"&gt;&lt;/script&gt;
+
+// Session and navigation management
+&lt;script src="adagio_session.js"&gt;&lt;/script&gt;
+
+// Browser and device features detection
+&lt;script src="adagio_features.js"&gt;&lt;/script&gt;
+
+// Viewability measurement functionality
+&lt;script src="adagio_measurement.js"&gt;&lt;/script&gt;
+
+// Main entry point and integration
+&lt;script src="adagio_main.js"&gt;&lt;/script&gt;</pre>
+
+  <!-- Load the refactored ADAGIO library -->
+  <!-- Note: Order is important! Core must load first -->
+  <script src="adagio_core.js"></script>
+  <script src="adagio_session.js"></script>
+  <script src="adagio_features.js"></script>
+  <script src="adagio_measurement.js"></script>
+  <script src="adagio_main.js"></script>
+  
+  <script>
+    // Demo functionality
+    document.getElementById('enable-debug').addEventListener('click', function() {
+      localStorage.setItem('ADAGIO_DEV_DEBUG', true);
+      alert('Debug mode enabled. Refresh the page to see debug logs.');
+    });
+    
+    document.getElementById('disable-debug').addEventListener('click', function() {
+      localStorage.removeItem('ADAGIO_DEV_DEBUG');
+      alert('Debug mode disabled.');
+    });
+    
+    document.getElementById('show-logs').addEventListener('click', function() {
+      const debugOutput = document.getElementById('debug-output');
+      
+      if (window._ADAGIO && window._ADAGIO.queueHistory) {
+        const queueHistoryStr = JSON.stringify(window._ADAGIO.queueHistory, null, 2);
+        debugOutput.textContent = queueHistoryStr;
+      } else {
+        debugOutput.textContent = '// No debug information available.\n// Try enabling debug mode and refreshing the page.';
+      }
+    });
+    
+    // Function to simulate ad server events
+    function simulateAdServerEvent(adUnitId, eventType) {
+      if (!window.ADAGIO || !window.ADAGIO.queue) return;
+      
+      const timestamp = Date.now();
+      
+      window.ADAGIO.queue.push({
+        action: "gpt-event",
+        data: {
+          eventName: eventType,
+          args: {
+            slot: {
+              getSlotElementId: function() { return adUnitId; }
+            },
+            inViewPercentage: 75
+          },
+          _window: window
+        },
+        ts: timestamp
+      });
+      
+      console.log(`Simulated ${eventType} event for ${adUnitId}`);
+    }
+    
+    // Simulate ad events after a delay
+    setTimeout(function() {
+      simulateAdServerEvent('ad-unit-1', 'slotRenderEnded');
+      
+      setTimeout(function() {
+        simulateAdServerEvent('ad-unit-1', 'impressionViewable');
+      }, 1500);
+      
+      setTimeout(function() {
+        simulateAdServerEvent('ad-unit-2', 'slotRenderEnded');
+      }, 2000);
+      
+      setTimeout(function() {
+        simulateAdServerEvent('ad-unit-3', 'slotRenderEnded');
+        simulateAdServerEvent('ad-unit-2', 'impressionViewable');
+      }, 3000);
+    }, 1000);
+  </script>
+</body>
+</html>

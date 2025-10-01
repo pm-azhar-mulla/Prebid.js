@@ -1,0 +1,448 @@
+
+
+<!--
+  この広告スロット用の単一の入札者を呼び出すページです。
+  Google Publisher Tagを使用したPrebidの「ハローワールド」の例と考えることができます。
+  新しいアダプターのテストページとしても適しています。
+-->
+
+<html>
+   <head>
+       <meta charset="UTF-8">
+       <title>IX-PM adapter comparison</title>
+       <script async src="../../build/dev/prebid.js"></script>
+       <script async src="https://www.googletagservices.com/tag/js/gpt.js"></script>
+
+       <script>
+           var FAILSAFE_TIMEOUT = 3300;
+           var PREBID_TIMEOUT = 3000;
+   
+           var adUnits = [
+    {
+        "code": "div-gpt-ad-1460505748561-0",
+        "sizes": [[300, 50], [320, 50], [300, 100], [320, 100]],
+        "mediaTypes": {
+            "banner": {
+                "sizes": [[320, 100], [300, 100], [320, 50], [300, 50]]
+            }
+        },
+        "bids": [
+            {
+                "bidder": "ix",
+                "params": {
+                    "siteId": "676941",
+                    "size": [300, 50]
+                },
+                "sizeConfig": [
+                    {
+                        "minViewPort": [0, 0],
+                        "relevantMediaTypes": ["banner", "native", "video"]
+                    }
+                ]
+            },
+            {
+                "bidder": "ix",
+                "params": {
+                    "siteId": "676941",
+                    "size": [320, 50]
+                },
+                "sizeConfig": [
+                    {
+                        "minViewPort": [0, 0],
+                        "relevantMediaTypes": ["banner", "native", "video"]
+                    }
+                ]
+            },
+            {
+                "bidder": "ix",
+                "params": {
+                    "siteId": "676941",
+                    "size": [300, 100]
+                },
+                "sizeConfig": [
+                    {
+                        "minViewPort": [0, 0],
+                        "relevantMediaTypes": ["banner", "native", "video"]
+                    }
+                ]
+            },
+            {
+                "bidder": "ix",
+                "params": {
+                    "siteId": "676941",
+                    "size": [320, 100]
+                },
+                "sizeConfig": [
+                    {
+                        "minViewPort": [0, 0],
+                        "relevantMediaTypes": ["banner", "native", "video"]
+                    }
+                ]
+            },
+            {
+                "bidder": "pubmatic",
+                "size": [[300, 100]],
+                "params": {
+                    "publisherId": "156696",
+                    "adSlot": "freestar_300x100@300x100",
+                    "lat":"123",
+                    "yob": "12",
+                    "gender": "M",
+                    "bcat": "IAB1",
+                    "dctr": "key1=value1|key2=value2",
+                    "deals": [ 'deal-id-1' ]
+                },
+                "sizeConfig": [
+                    {
+                        "minViewPort": [0, 0],
+                        "relevantMediaTypes": ["banner", "native"]
+                    }
+                ]
+            },
+            {
+                "bidder": "pubmatic",
+                "size": [[320, 100]],
+                "params": {
+                    "publisherId": "156696",
+                    "adSlot": "freestar_320x100@320x100",
+                    "yob": "123",
+                    "gender": "M2",
+                     "bcat": "IAB2",
+                     "pmzoneid": "123",
+                     "dctr": "key1=v22|key2=v22",
+                     "deals": [ 'deal-id-2' ]
+                },
+                "sizeConfig": [
+                    {
+                        "minViewPort": [0, 0],
+                        "relevantMediaTypes": ["banner", "native", "video"]
+                    }
+                ]
+            },
+            {
+                "bidder": "pubmatic",
+                "size": [[320, 50]],
+                "params": {
+                    "publisherId": "156696",
+                    "adSlot": "freestar_320x50@320x50"
+                },
+                "sizeConfig": [
+                    {
+                        "minViewPort": [0, 0],
+                        "relevantMediaTypes": ["banner", "native", "video"]
+                    }
+                ]
+            },{
+                "bidder": "pmS2S",
+                "size": [[300, 100]],
+                "params": {
+                    "publisherId": "156696",
+                    "adSlot": "freestar_300x100@300x100",
+                    "lat":"123",
+                    "yob": "12",
+                    "gender": "M",
+                    "bcat": "IAB1",
+                    "dctr": "key1=value1|key2=value2",
+                    "deals": [ 'deal-id-1' ]
+                },
+                "sizeConfig": [
+                    {
+                        "minViewPort": [0, 0],
+                        "relevantMediaTypes": ["banner", "native"]
+                    }
+                ]
+            },
+            {
+                "bidder": "pmS2S",
+                "size": [[320, 100]],
+                "params": {
+                    "publisherId": "156696",
+                    "adSlot": "freestar_320x100@320x100",
+                    "yob": "123",
+                    "gender": "M2",
+                     "bcat": "IAB2",
+                     "pmzoneid": "123",
+                     "dctr": "key1=v22|key2=v22",
+                     "deals": [ 'deal-id-2' ]
+                },
+                "sizeConfig": [
+                    {
+                        "minViewPort": [0, 0],
+                        "relevantMediaTypes": ["banner", "native", "video"]
+                    }
+                ]
+            },
+            {
+                "bidder": "pmS2S",
+                "size": [[320, 50]],
+                "params": {
+                    "publisherId": "156696",
+                    "adSlot": "freestar_320x50@320x50"
+                },
+                "sizeConfig": [
+                    {
+                        "minViewPort": [0, 0],
+                        "relevantMediaTypes": ["banner", "native", "video"]
+                    }
+                ]
+            }
+        ],
+        "ortb2Imp": {
+            "ext": {
+                "data": {
+                    "fs_ad_product": "stickyFooter",
+                    "fs_ad_optimization": null
+                }
+            },
+            "tagid": "wordtips_vip_adhesion_mobile",
+            "battr": [1, 3, 5, 8, 9, 10, 14]
+        }
+    },{
+        "code": "div-gpt-ad-1460505748561-0",
+        "sizes": [[728,90]],
+        "mediaTypes": {
+            "banner": {
+                "sizes": [[728,90]]
+            }
+        },
+        "bids": [
+            {
+                "bidder": "ix",
+                "params": {
+                    "siteId": "676941",
+                    "size": [728, 90]
+                },
+                "sizeConfig": [
+                    {
+                        "minViewPort": [0, 0],
+                        "relevantMediaTypes": ["banner", "native", "video"]
+                    }
+                ]
+            },
+            {
+                "bidder": "pubmatic",
+                "size": [[728, 90]],
+                "params": {
+                    "publisherId": "156696",
+                    "adSlot": "freestar_728x90@728x90"
+                },
+                "sizeConfig": [
+                    {
+                        "minViewPort": [0, 0],
+                        "relevantMediaTypes": ["banner", "native"]
+                    }
+                ]
+            },
+            {
+                "bidder": "pmS2S",
+                "size": [[728, 90]],
+                "params": {
+                    "publisherId": "156696",
+                    "adSlot": "freestar_728x90@728x90"
+                },
+                "sizeConfig": [
+                    {
+                        "minViewPort": [0, 0],
+                        "relevantMediaTypes": ["banner", "native"]
+                    }
+                ]
+            }
+            
+        ],
+        "ortb2Imp": {
+            "ext": {
+                "data": {
+                    "fs_ad_product": "stickyFooter",
+                    "fs_ad_optimization": null
+                }
+            },
+            "tagid": "wordtips_vip_adhesion_mobile",
+            "battr": [1, 3, 5, 8, 9, 10, 14]
+        }
+    },{
+        "code": "div-gpt-ad-1460505748561-0-2",
+        "mediaTypes": {
+            "banner": {
+                "sizes": [[728,90]]
+            },
+            "video": {
+                "playerSize": [640, 480],
+                "context": 'instream',
+                "mimes": ['video/mp4', 'video/x-flv'],
+                "skippable": 0,
+                "minduration": 1,
+                "maxduration": 30,
+                "startdelay": 15,
+                "playbackmethod": [1, 3],
+                "api": [1, 2],
+                "protocols": [2, 3],
+                "w": 640,
+                "h": 480,
+                "battr": [13, 14],
+                "linearity": 1,
+                "placement": 2,
+                "plcmt": 2,
+                "minbitrate": 100,
+                "maxbitrate": 4096
+            }
+        },
+        "bids": [
+            {
+                "bidder": "ix",
+                "params": {
+                    "siteId": "676941",
+                    "size": [728, 90]
+                },
+                "sizeConfig": [
+                    {
+                        "minViewPort": [0, 0],
+                        "relevantMediaTypes": ["banner", "native", "video"]
+                    }
+                ]
+            },
+            {
+                "bidder": "pubmatic",
+                "size": [[640, 480]],
+                "params": {
+                    "publisherId": "156696",
+                    "adSlot": "freestar_728x90@728x90"
+                },
+                "sizeConfig": [
+                    {
+                        "minViewPort": [0, 0],
+                        "relevantMediaTypes": ["banner", "native"]
+                    }
+                ]
+            },
+            {
+                "bidder": "pmS2S",
+                "size": [[640, 480]],
+                "params": {
+                    "publisherId": "156696",
+                    "adSlot": "freestar_728x90@728x90"
+                },
+                "sizeConfig": [
+                    {
+                        "minViewPort": [0, 0],
+                        "relevantMediaTypes": ["banner", "native"]
+                    }
+                ]
+            }
+        ],
+        "ortb2Imp": {
+            "ext": {
+                "data": {
+                    "fs_ad_product": "stickyFooter",
+                    "fs_ad_optimization": null
+                }
+            },
+            "tagid": "wordtips_vip_adhesion_mobile",
+            "battr": [1, 3, 5, 8, 9, 10, 14]
+        }
+    }
+];
+   
+           var pbjs = pbjs || {};
+           pbjs.que = pbjs.que || [];
+   
+       </script>
+   
+       <script>
+           var googletag = googletag || {};
+           googletag.cmd = googletag.cmd || [];
+           googletag.cmd.push(function() {
+               googletag.pubads().disableInitialLoad();
+           });
+   
+           pbjs.que.push(function() {
+   
+            pbjs.aliasBidder('pubmatic', 'pmS2S');
+debugger;
+            pbjs.requestBids();
+                pbjs.requestBids.before(function() {
+                    console.log('AZZI123 pbjs.requestBids arguments:', arguments);
+                    //return originalRequestBids.apply(this, arguments);
+                }, 30);
+            
+               pbjs.setConfig({
+                   enableTIDs: true,
+                   realTimeData: {
+                        dataProviders:[{
+                        name: 'adagio',
+                        params: {
+                            organizationId: '1000', // Required. Provided by Adagio
+                            site: "my-site" // Required. Provided by Adagio
+                        }
+                        }]
+                    },
+                //    s2sConfig:{
+                //     accountId: "156696",
+                //     enabled: true,
+                //     bidders: ["pmS2S"],
+                //     adapter: "prebidServer",
+                //     endpoint: "https://ow.pubmatic.com/pbs/openrtb2/auction",
+                //     syncEndpoint: "https://ow.pubmatic.com/cookie_sync/?sec=1"
+                //    },
+                   floors: {
+                        enabled: true,
+                        data:{
+                        currency: 'USD',
+                        schema: {
+                            delimiter: '|',
+                            fields: [ 'mediaType', 'size' ]
+                        },
+                        values: {
+                            'banner|300x50': 1.10,
+                            'banner|320x50': 1.35,
+                            'banner|300x100': 2.00,
+                            'banner|320x100': 2.50
+                        }
+                    }
+                    }
+               });
+               pbjs.addAdUnits(adUnits);
+               pbjs.requestBids({
+                   bidsBackHandler: sendAdserverRequest,
+                   timeout: PREBID_TIMEOUT
+               });
+           });
+   
+           function sendAdserverRequest() {
+               if (pbjs.adserverRequestSent) return;
+               pbjs.adserverRequestSent = true;
+               googletag.cmd.push(function() {
+                   pbjs.que.push(function() {
+                       pbjs.setTargetingForGPTAsync();
+                       googletag.pubads().refresh();
+                   });
+               });
+           }
+   
+           setTimeout(function() {
+               sendAdserverRequest();
+           }, FAILSAFE_TIMEOUT);
+   
+       </script>
+   
+       <script>
+           googletag.cmd.push(function () {
+               googletag.defineSlot('/199622228336/test-adunit', [[728, 90], [300, 250]], 'div-gpt-ad-1460505748561-0').addService(googletag.pubads());
+   
+               googletag.pubads().enableSingleRequest();
+               googletag.enableServices();
+           });
+       </script>
+   </head>
+   
+   <body>
+   <h1>Test page</h1>
+   <h2>PM request testing</h2>
+   <div id='div-gpt-ad-1460505748561-0' style="width:100%; height:300px; background-color: #faf2f3;">
+       <script type='text/javascript'>
+           googletag.cmd.push(function() { googletag.display('div-gpt-ad-1460505748561-0'); });
+       </script>
+   </div>
+   </body>
+   </html>
+
+   
