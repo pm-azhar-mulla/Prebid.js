@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Prebid.js PubmaticRTD Provider Test</title>
+    <script async src="../../build/dev/prebid.js"></script>
+    <script src="dynamicCode.js"></script>
+    <script>
+        var pbjs = pbjs || {};
+        pbjs.que = pbjs.que || [];
+
+        // Define ad units
+        var adUnits = [{
+            code: 'test-div',
+            mediaTypes: {
+                banner: {
+                    sizes: [[300, 250], [300, 600]]
+                }
+            },
+            bids: [{
+                bidder: 'pubmatic',
+                params: {
+                    publisherId: "13144370",
+                    profileId: "1234",
+                    profileVersionId: "1"
+                }
+            }]
+        }];
+
+        // Prebid configuration
+        pbjs.que.push(function() {
+            // Configure Prebid
+            pbjs.setConfig({
+                debug: true,
+                realTimeData: {
+                    auctionDelay: 100,
+                    dataProviders: [{
+                        name: "pubmatic",
+                        waitForIt: true,
+                        params: {
+                            publisherId: '12345',  // Replace with your Pubmatic publisher ID
+                            profileId: 1234,       // Replace with your profile ID
+                            profileVersionId: 1,
+                        }
+                    }]
+                }
+            });
+
+            // Add ad units
+            pbjs.addAdUnits(adUnits);
+
+            // Request bids
+            pbjs.requestBids({
+                bidsBackHandler: function(bids) {
+                    console.log('All bids returned:', bids);
+                    // Log floor data to verify extension is working
+                    console.log('Floor data:', pbjs.getConfig('floors'));
+                }
+            });
+
+            // Add a dynamic field after initialization
+            setTimeout(function() {
+                if (window.PubmaticRtdExtensions) {
+                    window.PubmaticRtdExtensions.addSchemaField('userInterest', function() {
+                        return 'technology'; // Simulated user interest
+                    });
+                    console.log('Added dynamic field: userInterest');
+                }
+            }, 2000);
+        });
+    </script>
+    <style>
+        .ad-container {
+            width: 300px;
+            height: 250px;
+            border: 1px solid #ccc;
+            margin: 20px auto;
+            position: relative;
+        }
+        h1, p {
+            text-align: center;
+            font-family: Arial, sans-serif;
+        }
+    </style>
+</head>
+<body>
+    <h1>Prebid.js with PubmaticRTD Provider Test</h1>
+    <p>Check the browser console to see the floor data and verify the extension is working</p>
+
+    <div class="ad-container">
+        <div id="test-div">
+            <!-- Ad will be rendered here -->
+        </div>
+    </div>
+
+    <script>
+        // Log extension information
+        pbjs.que.push(function() {
+            console.log('Test page loaded and Prebid initialized');
+            if (window.PubmaticRtdExtensions) {
+                console.log('Extension fields available:', 
+                    Object.keys(window.PubmaticRtdExtensions.additionalSchemaFields));
+            } else {
+                console.warn('PubmaticRtdExtensions not found');
+            }
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,14 @@
+ {
+            "floorProvider": "floorProviderName",
+            "currency": "USD",
+             "skipRate": 0,
+            "modelVersion": "new model 1.0",
+            "schema": {
+                "fields": [ "mediaType","supportScreen" ]
+            },
+            "values": {
+                "banner|large": 0.80,
+                "video|medium": 1.20,
+                "*|*":1
+            }
+        }

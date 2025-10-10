@@ -1,0 +1,38 @@
+{
+    "profileName": "profie name",
+    "desc": "description",
+    "plugins": {
+        "dynamicFloors": {
+            "enabled": true,
+            "config": {
+                "enforcement": {
+                    "floorDeals": false,
+                    "enforceJS": false
+                },
+                "floorMin": 0.22,
+                "skipRate": 0,
+                "defaultValues": {
+                    "*|*": 0.22
+                }
+            }
+        },			
+        "bidderTimeout": {
+            "enabled": true,
+            "baseTimeout": 1200,
+            "rules": {
+                "includesVideo": {
+                    "true": 300,
+                    "false": 100
+                }
+            }
+        },
+        "bidderExclusion":  {
+            "enabled": true,
+            "config" : {
+                "div-gpt-ad-1460505748561-0": ["appnexus","foobar"],
+                "div-gpt-ad-1460505748561-1": [],
+                "div1": []
+            }
+        } 
+    }
+}

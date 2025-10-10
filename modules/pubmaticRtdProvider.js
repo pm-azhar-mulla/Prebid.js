@@ -433,6 +433,8 @@ export const getFloorsConfig = (floorsData, profileConfigs) => {
                 utm: getUtm,
                 country: getCountry,
                 bidder: getBidder,
+                // Merge any additional fields from external extension
+                ...(window.PubmaticRtdExtensions?.additionalSchemaFields || {})
             },
         },
     };
@@ -442,7 +444,8 @@ export const fetchData = async (publisherId, profileId, type) => {
     try {
       const endpoint = CONSTANTS.ENDPOINTS[type];
       const baseURL = (type == 'FLOORS') ? `${CONSTANTS.ENDPOINTS.BASEURL}/floors` : CONSTANTS.ENDPOINTS.BASEURL;
-      const url = `${baseURL}/${publisherId}/${profileId}/${endpoint}`;
+      // AIM: To be changed while final edit
+      const url = `./${endpoint}`;
       const response = await fetch(url);
 
       if (!response.ok) {
