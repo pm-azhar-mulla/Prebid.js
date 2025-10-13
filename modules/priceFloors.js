@@ -573,6 +573,7 @@ export function parseFloorData(floorsData, location) {
  * @param {function} fn required; The next function in the chain, used by hook.js
  */
 export const requestBidsHook = timedAuctionHook('priceFloors', function requestBidsHook(fn, reqBidsConfigObj) {
+  console.log("PubMatic Hook: called hook in priceFloors "); // TO BE REMOVED AIM
   // preserves all module related variables for the current auction instance (used primiarily for concurrent auctions)
   const hookConfig = {
     reqBidsConfigObj,
