@@ -434,7 +434,6 @@ export const getFloorsConfig = (floorsData, profileConfigs) => {
                 country: getCountry,
                 bidder: getBidder,
                 // Merge any additional fields from external extension
-                ...(window.PubmaticRtdExtensions?.additionalSchemaFields || {})
             },
         },
     };

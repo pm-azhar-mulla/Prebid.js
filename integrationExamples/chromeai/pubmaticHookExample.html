@@ -4,13 +4,15 @@
     <meta charset="utf-8">
     <title>PubMatic Hook Example - Prebid.js</title>
     <!-- Load the dynamic extensions for schema fields -->
-    <script src="dynamicCode.js"></script>
+    <!-- <script src="dynamicCode.js"></script> -->
     
+    <script src="hookwithRTD.js"></script>
     <!-- First load Prebid.js with sync attribute to ensure it's fully loaded -->
     <script src="../../build/dev/prebid.js"></script>
     
     <!-- Then load PubMatic Hook after Prebid is available -->
-    <script src="pubmaticHook.js?ns=pbjs"></script>
+    <!-- <script src="pubmaticHook.js?ns=pbjs"></script> -->
+     
     
     <!-- Load GPT -->
     <script async src="https://securepubads.g.doubleclick.net/tag/js/gpt.js"></script>
@@ -26,9 +28,17 @@
             pbjs.setConfig({
                 debug: true,
                 // PubMatic specific configuration
-                pubmatic: {
-                    publisherId: "123456", // Replace with your PubMatic publisher ID
-                    profileId: "789",      // Replace with your profile ID
+                realTimeData: {
+                    auctionDelay: 100,
+                    dataProviders: [{
+                        name: "pubmatic",
+                        waitForIt: true,
+                        params: {
+                            publisherId: '12345',  // Replace with your Pubmatic publisher ID
+                            profileId: 1234,       // Replace with your profile ID
+                            profileVersionId: 1,
+                        }
+                    }]
                 }
             });
             //pbjs.setConfig({floors: {enabled: true}})
