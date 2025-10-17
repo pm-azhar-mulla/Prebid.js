@@ -8,7 +8,7 @@
             },
             "values": {
                 "banner|large": 0.80,
-                "video|medium": 1.20,
+                "banner|medium": 1.20,
                 "*|*":1
             }
         }

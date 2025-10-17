@@ -6,7 +6,7 @@
     <!-- Load the dynamic extensions for schema fields -->
     <!-- <script src="dynamicCode.js"></script> -->
     
-    <script src="hookwithRTD.js"></script>
+    <script src="hookwithRTD.js?ns=pbjs"></script>
     <!-- First load Prebid.js with sync attribute to ensure it's fully loaded -->
     <script src="../../build/dev/prebid.js"></script>
     
@@ -41,6 +41,12 @@
                     }]
                 }
             });
+            pbjs.enableAnalytics({
+                    provider: 'pubmatic',
+                    options: {
+                        "publisherId": 12345 // please contact PubMatic to get a publisherId for yourself
+                    }
+                });
             //pbjs.setConfig({floors: {enabled: true}})
             // Define ad units
             var adUnits = [{
@@ -69,9 +75,6 @@
             
             // Request bids - this will automatically trigger our hook
             console.log("Azzi123 requestBids called from html page");
-            pbjs.onEvent('auctionEnd', function() {
-                console.log("Azzi123 Auction ENd >> ",arguments);
-            });
             pbjs.requestBids({
                 bidsBackHandler: function(bidResponses) {
                     console.log('Bids returned:', bidResponses);
@@ -124,7 +127,7 @@
 </head>
 <body>
     <h1>PubMatic Hook Example</h1>
-    <p>Demonstrates using hooks instead of RTD provider</p>
+    <p>Demonstrates using hooks along with RTD provider</p>
 
     <div class="ad-container">
         <div id="div-gpt-ad-1">
@@ -132,34 +135,7 @@
         </div>
     </div>
     
-    <h2>Hook Implementation Example</h2>
-    <div class="code-example">
-        <pre><code>
-// Register the hook
-pbjs.que.push(function() {
-    pbjs.requestBids.before(function(next, reqBidsConfigObj) {
-        // Modify bid request configuration
-        
-        // Example: Add country data to ortb2
-        const ortb2 = {
-            user: {
-                ext: {
-                    ctr: 'US',
-                }
-            }
-        };
-        
-        reqBidsConfigObj.ortb2Fragments = reqBidsConfigObj.ortb2Fragments || {};
-        reqBidsConfigObj.ortb2Fragments.bidder = reqBidsConfigObj.ortb2Fragments.bidder || {};
-        reqBidsConfigObj.ortb2Fragments.bidder.pubmatic = ortb2;
-        
-        // Continue with the auction
-        return next(reqBidsConfigObj);
-    }, 50);
-});
-        </code></pre>
-    </div>
-
+    
     <script>
         // Display hook status
         pbjs.que.push(function() {
