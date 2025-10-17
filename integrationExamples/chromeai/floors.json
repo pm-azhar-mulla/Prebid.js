@@ -4,11 +4,13 @@
              "skipRate": 0,
             "modelVersion": "new model 1.0",
             "schema": {
-                "fields": [ "mediaType" ]
+                "fields": [ "mediaType","supportScreen" ]
             },
             "values": {
-                "banner": 0.80,
-                "video": 1.20,
-                "*":1
+                "banner|large": 0.80,
+                "banner|medium": 0.60,
+                "banner|small": 0.40,
+                "video|*": 1.20,
+                "*|*":1
             }
         }

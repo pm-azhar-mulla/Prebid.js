@@ -143,6 +143,12 @@
     };
   }
 
+  function getSupportScreen() {
+    // Determine screen support level based on viewport width
+    const width = window.innerWidth;
+    return width > 1200 ? 'large' : width > 768 ? 'medium' : 'small';
+  }
+
   // Data fetching - similar to RTD provider but simplified for hook approach
   async function fetchData(endpoint) {
     try {
@@ -174,17 +180,6 @@
     // Add schema fields to floor data configuration
     const schemaFields = {
       ...(floorData.schema && floorData.schema.fields ? { fields: floorData.schema.fields } : {}),
-      ...{
-        additionalSchemaFields: {
-          deviceType: getDeviceType,
-          timeOfDay: getCurrentTimeOfDay,
-          browser: getBrowserType,
-          os: getOs,
-          utm: getUtm,
-          country: getCountry,
-          bidder: getBidder
-        }
-      }
     };
     
     return {
@@ -193,7 +188,17 @@
         data: {
           ...floorData,
           schema: schemaFields,
-        }
+        },
+        additionalSchemaFields: {
+            deviceType: getDeviceType,
+            timeOfDay: getCurrentTimeOfDay,
+            browser: getBrowserType,
+            os: getOs,
+            utm: getUtm,
+            country: getCountry,
+            bidder: getBidder,
+            supportScreen: getSupportScreen
+          }
       }
     };
   }
