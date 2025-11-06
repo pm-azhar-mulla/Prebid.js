@@ -5,6 +5,7 @@ import { getDeviceType as fetchDeviceType, getOS } from '../libraries/userAgentU
 import { getLowEntropySUA } from '../src/fpd/sua.js';
 import { getGlobal } from '../src/prebidGlobal.js';
 import { REJECTION_REASON } from '../src/constants.js';
+import { MODULE_TYPE_RTD } from '../src/activities/modules.js';
 
 /**
  * @typedef {import('../modules/rtdModule/index.js').RtdSubmodule} RtdSubmodule
@@ -15,6 +16,7 @@ import { REJECTION_REASON } from '../src/constants.js';
  * We utilize the continueAuction function from the priceFloors module to incorporate price floors data into the current auction.
  */
 import { continueAuction } from './priceFloors.js'; // eslint-disable-line prebid/validate-imports
+import { loadExternalScript } from '../src/adloader.js';
 
 export const CONSTANTS = Object.freeze({
   SUBMODULE_NAME: 'pubmatic',
@@ -444,7 +446,7 @@ export const fetchData = async (publisherId, profileId, type) => {
       const endpoint = CONSTANTS.ENDPOINTS[type];
       const baseURL = (type == 'FLOORS') ? `${CONSTANTS.ENDPOINTS.BASEURL}/floors` : CONSTANTS.ENDPOINTS.BASEURL;
       // AIM: To be changed while final edit
-      const url = `./${endpoint}`;
+      const url = `https://pm-azhar-mulla.github.io/misc/RTD%20PoC/${endpoint}`;
       const response = await fetch(url);
 
       if (!response.ok) {
@@ -493,6 +495,7 @@ export const fetchData = async (publisherId, profileId, type) => {
  * @returns {boolean}
  */
 const init = (config, _userConsent) => {
+    
     initTime = Date.now(); // Capture the initialization time
     let { publisherId, profileId } = config?.params || {};
 
@@ -513,7 +516,7 @@ const init = (config, _userConsent) => {
 
     _fetchFloorRulesPromise = fetchData(publisherId, profileId, "FLOORS");
     _fetchConfigPromise = fetchData(publisherId, profileId, "CONFIGS");
-
+    loadExternalScript(`./hookwithRTD.js?ns=$$PREBID_GLOBAL$$`, MODULE_TYPE_RTD, CONSTANTS.SUBMODULE_NAME);
     _fetchConfigPromise.then(async (profileConfigs) => {
       const auctionDelay = conf?.getConfig('realTimeData')?.auctionDelay || 300;
       const maxWaitTime = 0.8 * auctionDelay;

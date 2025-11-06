@@ -6,10 +6,10 @@
     <!-- Load the dynamic extensions for schema fields -->
     <!-- <script src="dynamicCode.js"></script> -->
     
-    <script src="hookwithRTD.js?ns=pbjs"></script>
+    
     <!-- First load Prebid.js with sync attribute to ensure it's fully loaded -->
     <script src="../../build/dev/prebid.js"></script>
-    
+    <!-- <script src="./hookwithRTD.js?ns=pbjs"></script> -->
     <!-- Then load PubMatic Hook after Prebid is available -->
     <!-- <script src="pubmaticHook.js?ns=pbjs"></script> -->
      
@@ -29,7 +29,7 @@
                 debug: true,
                 // PubMatic specific configuration
                 realTimeData: {
-                    auctionDelay: 100,
+                    auctionDelay: 200,
                     dataProviders: [{
                         name: "pubmatic",
                         waitForIt: true,
@@ -49,6 +49,20 @@
                 });
             //pbjs.setConfig({floors: {enabled: true}})
             // Define ad units
+            refreshAd()
+            
+        });
+        
+        // GPT setup
+        googletag.cmd.push(function() {
+            googletag.pubads().disableInitialLoad();
+            googletag.defineSlot('/19968336/header-bid-tag-0', [[300, 250], [300, 600]], 'div-gpt-ad-1')
+                .addService(googletag.pubads());
+            googletag.pubads().enableSingleRequest();
+            googletag.enableServices();
+        });
+        function refreshAd(){
+            pbjs.removeAdUnit();
             var adUnits = [{
                 code: 'div-gpt-ad-1',
                 mediaTypes: {
@@ -75,28 +89,21 @@
             
             // Request bids - this will automatically trigger our hook
             console.log("Azzi123 requestBids called from html page");
-            pbjs.requestBids({
-                bidsBackHandler: function(bidResponses) {
-                    console.log('Bids returned:', bidResponses);
-                    // Log floor data to verify hook worked
-                    console.log('Floor data after hook:', pbjs.getConfig('floors'));
-                    // Set targeting and refresh
-                    googletag.cmd.push(function() {
-                        pbjs.setTargetingForGPTAsync();
-                        googletag.pubads().refresh();
-                    });
-                }
-            });
-        });
-        
-        // GPT setup
-        googletag.cmd.push(function() {
-            googletag.pubads().disableInitialLoad();
-            googletag.defineSlot('/19968336/header-bid-tag-0', [[300, 250], [300, 600]], 'div-gpt-ad-1')
-                .addService(googletag.pubads());
-            googletag.pubads().enableSingleRequest();
-            googletag.enableServices();
-        });
+            setTimeout(function(){
+                pbjs.requestBids({
+                    bidsBackHandler: function(bidResponses) {
+                        console.log('Bids returned:', bidResponses);
+                        // Log floor data to verify hook worked
+                        console.log('Floor data after hook:', pbjs.getConfig('floors'));
+                        // Set targeting and refresh
+                        googletag.cmd.push(function() {
+                            pbjs.setTargetingForGPTAsync();
+                            googletag.pubads().refresh();
+                        });
+                    }
+                });
+            }, 200);
+        }
     </script>
     
     <style>
@@ -134,6 +141,7 @@
             <!-- Ad will be rendered here -->
         </div>
     </div>
+    <button onclick="refreshAd()">Refresh</button>
     
     
     <script>
