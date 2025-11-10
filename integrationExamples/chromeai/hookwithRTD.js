@@ -6,8 +6,8 @@
         console.log('Azzi1234 >> Post Floor Hook executed', reqBidsConfigObj);
         
         var prevConfig = pbjs.getConfig('floors');
-        console.log("pbjs getConfig", prevConfig.additionalSchemaFields.supportScreen);
-        if(!prevConfig.additionalSchemaFields.supportScreen){
+        //console.log("pbjs getConfig", prevConfig.additionalSchemaFields.supportScreen);
+        if(prevConfig && prevConfig.additionalSchemaFields && !prevConfig.additionalSchemaFields.supportScreen){
             
             pbjs.mergeConfig({
                 floors:{

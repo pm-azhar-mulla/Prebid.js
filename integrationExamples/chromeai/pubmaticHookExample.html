@@ -8,7 +8,7 @@
     
     
     <!-- First load Prebid.js with sync attribute to ensure it's fully loaded -->
-    <script src="../../build/dev/prebid.js"></script>
+    <script async src="../../build/dev/prebid.js"></script>
     <!-- <script src="./hookwithRTD.js?ns=pbjs"></script> -->
     <!-- Then load PubMatic Hook after Prebid is available -->
     <!-- <script src="pubmaticHook.js?ns=pbjs"></script> -->
@@ -102,7 +102,7 @@
                         });
                     }
                 });
-            }, 200);
+            }, 0);
         }
     </script>
     
