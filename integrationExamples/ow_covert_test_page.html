@@ -1,0 +1,65 @@
+<html></html>
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>No Adserver Example</title>
+    
+    <script>
+        window._iub = window._iub || {};
+        _iub.csConfiguration = {
+            cookiePolicyId: 417383,
+            siteId: 1,
+            logLevel: 'error',
+            lang: 'en',
+            enableTcf: true,
+        };
+    </script>
+    <script src="//cdn.iubenda.com/cs/tcf/beta/stub.js"></script>
+    <script async src="//cdn.iubenda.com/cs/beta/iubenda_cs.js"></script>
+
+    <script src="../../build/dev/prebid.js"></script>
+  </head>
+  <body>
+  
+  <!-- javascript -->
+  <script>
+
+var pbjs = pbjs || {};
+pbjs.que = pbjs.que || [];
+
+
+pbjs.que.push(function() {
+    var PWT = window.PWT || {};
+    var obj = {
+        adUnits:[{
+                    code: 'test-div',ortb2Imp: {tagId: '/43743431/DMDemo', ext:{'abvc':123}},
+                    mediaTypes: {banner: {sizes: [[300,250]]}}
+                }],
+        publisherId: "5890",
+        accountId: '12222',
+        bidders: ['pubmatic'],
+        timeout: 1000,
+        adapter: 'prebidServer',
+        endpoint: 'https://prebid-server.pubmatic.com/prebidserver/auction',
+        profileid : 47667,
+        versionid: 333,
+        keywords: {
+            'adButler1': 123
+        }
+    }
+    PWT.requestConvertServer(obj);
+    pbjs.requestBids({
+        timeout: 2000,
+        bidsBackHandler: PWT.renderAllAdUnits
+    });
+});
+
+
+
+</script>
+
+<h5>test-div</h5>
+<div id='test-div'></div>
+</body>
+</html>
